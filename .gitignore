@@ -1,0 +1,16 @@
+# Django #
+*.log
+*.pot
+*.pyc
+__pycache__
+db.sqlite3
+
+
+# Backup files #
+*.bak
+
+# venv #
+/jTunes-env
+
+# PyCharm #
+/.idea
