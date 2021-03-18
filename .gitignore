@@ -3,7 +3,7 @@
 *.pot
 *.pyc
 __pycache__
-db.sqlite3
+db.postgresql
 
 
 # Backup files #
@@ -11,6 +11,7 @@ db.sqlite3
 
 # venv #
 /jTunes-env
+/jTunes/venv
 
 # PyCharm #
 .idea
