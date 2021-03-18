@@ -2,65 +2,126 @@ from django.core.validators import MinValueValidator, MaxValueValidator
 from django.db import models
 
 
-class Member(models.Model):
-    item = models.ForeignKey('Item', on_delete=models.CASCADE)
-    container = models.ForeignKey('Playlist', on_delete=models.CASCADE)
-
-
 class Item(models.Model):
     name = models.CharField(max_length=200)
 
 
-class Song(Item):
-    A = "A"
-    Bb = "A#/Bb"
-    B = "B"
-    C = "C"
-    Db = "C#/Db"
-    D = "D"
-    Eb = "D#/Eb"
-    E = "E"
-    F = "F"
-    Gb = "F#/Gb"
-    G = "G"
-    Ab = "G#/Ab"
+class Genre(Item):
+    pass
+
+
+class Artist(Item):
+    genres = models.ManyToManyField(Genre, blank=True)
+
+
+class PlayableItem(Item):
+    pass
+
+
+class Song(PlayableItem):
+    class Keys:
+        A = "A      maj"
+        Bb = "A#/Bb maj"
+        B = "B      maj"
+        C = "C      maj"
+        Db = "C#/Db maj"
+        D = "D      maj"
+        Eb = "D#/Eb maj"
+        E = "E      maj"
+        F = "F      maj"
+        Gb = "F#/Gb maj"
+        G = "G      maj"
+        Ab = "G#/Ab maj"
+        Am = "A     min"
+        Bbm = "A#/Bb min"
+        Bm = "B      min"
+        Cm = "C      min"
+        Dbm = "C#/Db min"
+        Dm = "D      min"
+        Ebm = "D#/Eb min"
+        Em = "E      min"
+        Fm = "F      min"
+        Gbm = "F#/Gb min"
+        Gm = "G      min"
+        Abm = "G#/Ab min"
+
     KEY_CHOICES = (
-        (A, A),
-        (Bb, Bb),
-        (B, B),
-        (C, C),
-        (Db, Db),
-        (D, D),
-        (Eb, Eb),
-        (E, E),
-        (F, F),
-        (Gb, Gb),
-        (G, G),
-        (Ab, Ab)
+        (Keys.A, Keys.A),
+        (Keys.Am, Keys.Am),
+        (Keys.Bb, Keys.Bb),
+        (Keys.Bbm, Keys.Bbm),
+        (Keys.B, Keys.B),
+        (Keys.Bm, Keys.Bm),
+        (Keys.C, Keys.C),
+        (Keys.Cm, Keys.Cm),
+        (Keys.Db, Keys.Db),
+        (Keys.Dbm, Keys.Dbm),
+        (Keys.D, Keys.D),
+        (Keys.Dm, Keys.Dm),
+        (Keys.Eb, Keys.Eb),
+        (Keys.Ebm, Keys.Ebm),
+        (Keys.E, Keys.E),
+        (Keys.Em, Keys.Em),
+        (Keys.F, Keys.F),
+        (Keys.Fm, Keys.Fm),
+        (Keys.Gb, Keys.Gb),
+        (Keys.Gbm, Keys.Gbm),
+        (Keys.G, Keys.G),
+        (Keys.Gm, Keys.Gm),
+        (Keys.Ab, Keys.Ab),
+        (Keys.Abm, Keys.Abm),
     )
 
-    artist = models.CharField(blank=True, max_length=200)
+    artist = models.ManyToManyField(Artist, blank=True)
+    remix_of = models.ForeignKey('self', on_delete=models.CASCADE, blank=True, null=True)
     composer = models.CharField(blank=True, max_length=200, default=artist)
     year = models.IntegerField(blank=True, null=True)
-    genre = models.CharField(blank=True, max_length=200)
+    song_genre = models.CharField(blank=True, max_length=200)
     length = models.DurationField(verbose_name="song length", blank=True, null=True, default=None)
     tempo = models.PositiveIntegerField(verbose_name="tempo (bpm)", blank=True, null=True, default=None,
                                         validators=[MinValueValidator(0), MaxValueValidator(2048)])
-    key = models.CharField(blank=True, null=True, choices=KEY_CHOICES, default=None)
+    key = models.CharField(blank=True, null=True, choices=KEY_CHOICES, default=None, max_length=10)
     decibels = models.PositiveIntegerField(verbose_name="song loudness in Db", blank=True, null=True, default=0,
                                            validators=[MinValueValidator(0), MaxValueValidator(100)])
     lufs = models.IntegerField(verbose_name="song loudness in LUFS", blank=True, null=True, default=0,
                                validators=[MinValueValidator(-15), MaxValueValidator(0)])
-    arousal = models.DecimalField(blank=True, null=True, default=None)
-    valence = models.DecimalField(blank=True, null=True, default=None)
+    arousal = models.DecimalField(blank=True, null=True, default=None, decimal_places=20, max_digits=21)
+    valence = models.DecimalField(blank=True, null=True, default=None, decimal_places=20, max_digits=21)
 
 
-class Playlist(Item):
-    items = models.ManyToManyField(Item, through=Member)
-    pass
+class Album(PlayableItem):
+    album_artist = models.CharField(max_length=200)
+    songs = models.ManyToManyField(Song, through='AlbumToSong')
 
 
-class Album(Playlist):
-    artist = models.CharField(max_length=200)
-    songs = models.ManyToManyField(Song, through=Member)
+class Playlist(PlayableItem):
+    num_items = models.PositiveIntegerField(default=0)  # TODO: editable=False
+    songs = models.ManyToManyField(Song, through='PlaylistToSong', blank=True)
+    playlists = models.ManyToManyField('self', through='PlaylistToPlaylist', blank=True)  # TODO: prevent referencing itself
+    albums = models.ManyToManyField(Album, through='PlaylistToAlbum', blank=True)
 
+
+#### 'through' models ####
+class Order(models.Model):
+    order = models.PositiveIntegerField(blank=True, null=True)
+
+
+class AlbumToSong(Order):
+    album = models.ForeignKey(Album, on_delete=models.CASCADE)
+    song = models.ForeignKey(Song, on_delete=models.CASCADE)
+
+
+class PlaylistTo(Order):
+    playlist = models.ForeignKey(Playlist, on_delete=models.CASCADE)
+
+
+class PlaylistToSong(PlaylistTo):
+    song = models.ForeignKey(Song, on_delete=models.CASCADE)
+
+
+class PlaylistToPlaylist(PlaylistTo):
+    member_playlist = models.ForeignKey(Playlist, on_delete=models.CASCADE)
+
+
+class PlaylistToAlbum(PlaylistTo):
+    album = models.ForeignKey(Album, on_delete=models.CASCADE)
