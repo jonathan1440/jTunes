@@ -39,23 +39,6 @@ class Song(Item):
         (Ab, Ab)
     )
 
-    ionian = "I"
-    dorian = "II"
-    phrygian = "III"
-    lydian = "IV"
-    mixolydian = "V"
-    aeolian = "VI"
-    locrian = "VII"
-    MODE_CHOICES = (
-        (ionian, "Ionian (I)"),
-        (dorian, "Dorian (II)"),
-        (phrygian, "Phrygian (III)"),
-        (lydian, "Lydian (IV)"),
-        (mixolydian, "Mixolydian (V)"),
-        (aeolian, "Aeolian (VI)"),
-        (locrian, "Locrian (VII)")
-    )
-
     artist = models.CharField(blank=True, max_length=200)
     composer = models.CharField(blank=True, max_length=200, default=artist)
     year = models.IntegerField(blank=True, null=True)
@@ -64,7 +47,6 @@ class Song(Item):
     tempo = models.PositiveIntegerField(verbose_name="tempo (bpm)", blank=True, null=True, default=None,
                                         validators=[MinValueValidator(0), MaxValueValidator(2048)])
     key = models.CharField(blank=True, null=True, choices=KEY_CHOICES, default=None)
-    mode = models.CharField(blank=True, null=True, choices=MODE_CHOICES, default=None)
     decibels = models.PositiveIntegerField(verbose_name="song loudness in Db", blank=True, null=True, default=0,
                                            validators=[MinValueValidator(0), MaxValueValidator(100)])
     lufs = models.IntegerField(verbose_name="song loudness in LUFS", blank=True, null=True, default=0,
