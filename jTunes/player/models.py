@@ -76,7 +76,7 @@ class Song(PlayableItem):
     remix_of = models.ForeignKey('self', on_delete=models.CASCADE, blank=True, null=True)
     composer = models.CharField(blank=True, max_length=200, default=artist)
     year = models.IntegerField(blank=True, null=True)
-    song_genre = models.CharField(blank=True, max_length=200)
+    song_genre = models.ManyToManyField(Genre, blank=True)
     length = models.DurationField(verbose_name="song length", blank=True, null=True, default=None)
     tempo = models.PositiveIntegerField(verbose_name="tempo (bpm)", blank=True, null=True, default=None,
                                         validators=[MinValueValidator(0), MaxValueValidator(2048)])
