@@ -264,6 +264,7 @@ def new_playlist(name: str, items_and_track_nums: [[str, int]]):
 if __name__ == "__main__":
     import doctest
 
+    ### uncomment if your database is empty
     # pop = new_genre('t pop')
     # orch = new_genre('t orchestral')
     #
