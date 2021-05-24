@@ -4,6 +4,7 @@
 *.pyc
 __pycache__
 db.postgresql
+/jTunes/player/migrations
 
 
 # Backup files #
@@ -12,6 +13,7 @@ db.postgresql
 # venv #
 /jTunes-env
 /jTunes/venv
+/jTunesVenv
 
 # PyCharm #
 .idea

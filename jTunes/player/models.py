@@ -1,5 +1,6 @@
 from django.core.validators import MinValueValidator, MaxValueValidator
 from django.db import models
+from django.apps import AppConfig
 
 
 class Item(models.Model):
@@ -7,6 +8,7 @@ class Item(models.Model):
 
 
 class Genre(Item):
+    # TODO: make name a unique field
     pass
 
 
@@ -72,11 +74,12 @@ class Song(PlayableItem):
         (Keys.Abm, Keys.Abm),
     )
 
-    artist = models.ManyToManyField(Artist, blank=True)
+    path = models.FilePathField(path="H:/Music", default="H:/Music")
+    artists = models.ManyToManyField(Artist, blank=True, related_name='artist')
     remix_of = models.ForeignKey('self', on_delete=models.CASCADE, blank=True, null=True)
-    composer = models.CharField(blank=True, max_length=200, default=artist)
+    composers = models.ManyToManyField(Artist, blank=True, related_name='composer')
     year = models.IntegerField(blank=True, null=True)
-    song_genre = models.ManyToManyField(Genre, blank=True)
+    song_genres = models.ManyToManyField(Genre, blank=True)
     length = models.DurationField(verbose_name="song length", blank=True, null=True, default=None)
     tempo = models.PositiveIntegerField(verbose_name="tempo (bpm)", blank=True, null=True, default=None,
                                         validators=[MinValueValidator(0), MaxValueValidator(2048)])
@@ -90,20 +93,21 @@ class Song(PlayableItem):
 
 
 class Album(PlayableItem):
-    album_artist = models.CharField(max_length=200)
+    num_items = models.PositiveIntegerField(default=0)  # TODO: implement count, set editable=False
+    album_artists = models.ManyToManyField(Artist, blank=True)
     songs = models.ManyToManyField(Song, through='AlbumToSong')
 
 
 class Playlist(PlayableItem):
-    num_items = models.PositiveIntegerField(default=0)  # TODO: editable=False
+    num_items = models.PositiveIntegerField(default=0)  # TODO: implement count, set editable=False
     songs = models.ManyToManyField(Song, through='PlaylistToSong', blank=True)
-    playlists = models.ManyToManyField('self', through='PlaylistToPlaylist', blank=True)  # TODO: prevent referencing itself
     albums = models.ManyToManyField(Album, through='PlaylistToAlbum', blank=True)
+    playlists = models.ManyToManyField('self', through='PlaylistToPlaylist', blank=True)  # TODO: prevent referencing itself
 
 
 #### 'through' models ####
 class Order(models.Model):
-    order = models.PositiveIntegerField(blank=True, null=True)
+    track_num = models.PositiveIntegerField(blank=True, null=True)
 
 
 class AlbumToSong(Order):
