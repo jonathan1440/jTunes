@@ -289,6 +289,7 @@ def generate_playlist(name: str, params: [[str, object, object]]):
 if __name__ == "__main__":
     import doctest
 
+    ### uncomment if your database is empty
     # pop = new_genre('t pop')
     # orch = new_genre('t orchestral')
     #
