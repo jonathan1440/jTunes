@@ -261,6 +261,31 @@ def new_playlist(name: str, items_and_track_nums: [[str, int]]):
     return p
 
 
+def generate_playlist(name: str, params: [[str, object, object]]):
+    """
+    params is an array of [field name, value, range].
+    Example: ['arousal', 0.5, 0.1] will get all songs with an arousal value within 0.1 of 0.5.
+    The range element is optional, as in: ['artists', Artist.objects.get(name='Rameses B'), None], which will return all
+    songs listing Rameses B as an artist.
+    """
+    songs = []
+    for [field, value, val_range] in params:
+        if isinstance(value, int) or isinstance(value, float):
+            value = float(value)
+            if val_range is None:
+                val_range = 0.00000000001
+            if isinstance(val_range, int) or isinstance(val_range, float):
+                for song in Song.objects.all():
+                    if value - val_range <= getattr(song, field) <= value + val_range:
+                        songs.append(song)
+        else:
+            for song in Song.objects.all():
+                if getattr(song, field) == value:
+                    songs.append(song)
+
+    return new_playlist(name, [[song, None] for song in songs])
+
+
 if __name__ == "__main__":
     import doctest
 
