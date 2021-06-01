@@ -1,0 +1,17 @@
+{% extends 'jTunes/add/add_base.html' %}
+
+{% block title %}Add genre{% endblock %}
+{% block page_title %}Add genre{% endblock %}
+
+{% block list_link %}{% url 'jTunes:list genres' %}{% endblock %}
+{% block list_link_txt %}"Genre list"{% endblock %}
+
+{% block new_link %}{% url 'jTunes:new genre' %}{% endblock %}
+
+{% block form_contents %}
+    <label for="name">Name: </label>
+    <input id="name" type="text" name="name" value={% block name_value %}""{% endblock %}>
+    <br>
+{% endblock %}
+
+{% block delete %}{% endblock %}

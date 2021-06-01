@@ -1,0 +1,19 @@
+{% extends 'jTunes/add/add_artist.html' %}
+
+{% block title %}{{ artist.name }}{% endblock %}
+
+{% block list_link %}{%  url 'jTunes:list artists' %}{% endblock %}
+{% block list_link_txt %}"Artist list"{% endblock %}
+
+{% block page_title %}{% endblock %}
+
+{% block new_link %}{%  url 'jTunes:edit artist' artist.id %}{% endblock %}
+
+{% block name_value %}"{{ artist.name }}"{% endblock %}
+
+{% block delete %}
+    <br>
+    <form action="{% url 'jTunes:delete artist' artist.id %}">
+        <input type="submit" value="Delete artist">
+    </form>
+{% endblock %}

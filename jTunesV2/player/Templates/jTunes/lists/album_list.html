@@ -1,0 +1,22 @@
+{% extends 'jTunes/lists/lists_base.html' %}
+
+{% block page_title %}Albums{% endblock %}
+{% block table_title %}Albums{% endblock %}
+
+{% block table %}
+    <table class="artist_list">
+        <tr>
+            <th><h2>Name</h2></th>
+        </tr>
+        {%  if albums %}
+            {% for album in albums %}
+                <tr>
+                    <th class="songs"><a href="{% url 'jTunes:view album' album.1 %}">{{ album.0 }}</a></th>
+                </tr>
+            {% endfor %}
+        {%  endif %}
+    </table>
+{% endblock %}
+
+{% block add_link %}{% url 'jTunes:add album' %}{% endblock %}
+{% block add_btn_val %}"Add album"{% endblock %}

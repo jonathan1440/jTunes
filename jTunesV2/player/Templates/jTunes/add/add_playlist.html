@@ -1,0 +1,21 @@
+{% extends 'jTunes/add/add_base.html' %}
+
+{% block title %}Add playlist{% endblock %}
+{% block list_link %}{% url 'jTunes:list playlists' %}{% endblock %}
+{% block list_link_txt %}"Playlist list"{% endblock %}
+{% block page_title %}Add playlist{% endblock %}
+{% block new_link %}{% url 'jTunes:new playlist' %}{% endblock %}
+    {% block form_contents %}
+        <label for="name">Name: </label>
+        <input id="name" type="text" name="name" value={% block name_value %}""{% endblock %}>
+        <br>
+        <label for="items">Songs/albums/playlists (comma separated):</label>
+        <input id="items" type="text" name="items" value={% block items_value %}""{% endblock %}>
+        <br>
+    {% endblock %}
+{% block delete %}
+    <br>
+    <form action="{% url 'jTunes:generate playlist' %}">
+        <input type="submit" value="Generate playlist">
+    </form>
+{% endblock %}

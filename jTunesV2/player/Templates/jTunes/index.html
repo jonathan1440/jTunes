@@ -1,0 +1,25 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>jTunes</title>
+</head>
+<body>
+
+<h1><b>jTunes Song Database and Player</b></h1>
+
+made by Jonathan Ziesmer
+<br>
+
+<h2>Directory:</h2>
+
+<ul>
+    <li><a href={%  url 'jTunes:list songs' %}><h3>Songs</h3></a></li>
+    <li><a href={% url 'jTunes:list albums' %}><h3>Albums</h3></a></li>
+    <li><a href={% url 'jTunes:list playlists' %}><h3>Playlists</h3></a></li>
+    <li><a href={% url 'jTunes:list artists' %}><h3>Artists</h3></a></li>
+    <li><a href="{% url 'jTunes:list genres' %}"><h3>Genres</h3></a></li>
+</ul>
+
+</body>
+</html>

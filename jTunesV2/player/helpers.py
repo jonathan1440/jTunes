@@ -1,7 +1,7 @@
-from player.models import *
-
-from django.contrib.postgres.search import *
 from django.apps import apps
+from django.contrib.postgres.search import SearchVector
+
+from player.models import *
 
 
 def get_models():
@@ -42,7 +42,8 @@ def get_fields(model_name: str):
         ...
     LookupError: App 'player' doesn't have a 'not a model' model.
     """
-    return [field.name for field in get_model(model_name)._meta.get_fields()]  # https://docs.djangoproject.com/en/3.2/ref/applications/
+    return [field.name for field in
+            get_model(model_name)._meta.get_fields()]  # https://docs.djangoproject.com/en/3.2/ref/applications/
 
 
 def get_model_instance_obj(model_name: str, name: str):
@@ -54,7 +55,8 @@ def get_model_instance_obj(model_name: str, name: str):
     >>> get_model_instance_obj('artist', 'not an artist')
     <QuerySet []>
     """
-    return get_model(model_name).objects.annotate(search=SearchVector('name'), ).filter(search=name)  # https://docs.djangoproject.com/en/3.2/ref/contrib/postgres/search/#searchvector
+    return get_model(model_name).objects.annotate(search=SearchVector('name'), ).filter(
+        search=name)  # https://docs.djangoproject.com/en/3.2/ref/contrib/postgres/search/#searchvector
 
 
 def get_model_instance_txt(model_name: str, name: str):
@@ -64,7 +66,8 @@ def get_model_instance_txt(model_name: str, name: str):
     broken atm
     TODO: fix
     """
-    return [[[field, getattr(inst, field)] for field in get_fields(model_name)] for inst in get_model_instance_obj(model_name, name)]
+    return [[[field, getattr(inst, field)] for field in get_fields(model_name)] for inst in
+            get_model_instance_obj(model_name, name)]
 
 
 def edit_model_instance(model_instance, feature: str, value, verbose: bool = True):
@@ -105,7 +108,7 @@ def new_genre(name: str, verbose: bool = True):
         return g
     elif verbose:
         print("Error: genre ", name, " already exists")
-    return None
+    return Genre.objects.get(name=name)
 
 
 def new_artist(name: str, genres: [Genre] = None):
@@ -121,7 +124,7 @@ def new_artist(name: str, genres: [Genre] = None):
 
     if genres:
         for genre in genres:
-            a.genres.add(genre)
+            a.genres.add(new_genre(name=genre))
 
     a.save()
     return a
@@ -147,15 +150,24 @@ def new_song(name: str, path: str, artists: [Artist] = None, remix_of: Song = No
 
     if song_genres:
         for genre in song_genres:
-            s.song_genres.add(genre)
+            a = Genre.objects.annotate(search=SearchVector('name'), ).filter(search=genre)
+            if genre not in [rtist.name for rtist in a]:
+                a = [new_genre(name=genre)]
+            s.song_genres.add(a[0])
 
     if artists:
         for artist in artists:
-            s.artists.add(artist)
+            a = Artist.objects.annotate(search=SearchVector('name'), ).filter(search=artist)
+            if artist not in [rtist.name for rtist in a]:
+                a = [new_artist(name=artist)]
+            s.artists.add(a[0])
 
     if composers:
         for composer in composers:
-            s.composers.add(composer)
+            a = Artist.objects.annotate(search=SearchVector('name'), ).filter(search=composer)
+            if composer not in [rtist.name for rtist in a]:
+                a = [new_artist(name=composer)]
+            s.composers.add(a[0])
 
     s.save()
     return s
@@ -172,7 +184,9 @@ def new_albumtosong(album: Album, song: Song, track_num: int = None):
     >>> AlbumToSong.objects.get(album=Album.objects.get(name='Evaporate'),song=Song.objects.get(name='Evaporate'))[-1].delete()
     (2, {'player.AlbumToSong': 1, 'player.Order': 1})
     """
-    return AlbumToSong(track_num=track_num, album=album, song=song)
+    ats = AlbumToSong(track_num=track_num, album=album, song=song)
+    ats.save()
+    return ats
 
 
 def new_album(name: str, album_artists: [Artist] = None, songs_and_track_nums: [[Song, int]] = None):
@@ -189,11 +203,17 @@ def new_album(name: str, album_artists: [Artist] = None, songs_and_track_nums: [
 
     if album_artists:
         for artist in album_artists:
-            al.album_artists.add(artist)
+            a = Artist.objects.annotate(search=SearchVector('name'), ).filter(search=artist)
+            if artist not in [rtist.name for rtist in a]:
+                a = [new_artist(name=artist)]
+            al.album_artists.add(a[0])
 
     if songs_and_track_nums:
         for [song, track_num] in songs_and_track_nums:
-            new_albumtosong(album=al, song=song, track_num=track_num)
+            s = Song.objects.annotate(search=SearchVector('name'),).filter(search=song)
+            if song not in [sng.name for sng in s]:
+                s = [new_song(name=song)]
+            new_albumtosong(album=al, song=s[0], track_num=track_num)
 
     al.save()
     return al
@@ -206,7 +226,9 @@ def new_playlisttosong(playlist: Playlist, song: Song, track_num: int = None):
     >>> new_playlisttosong(Playlist.objects.get(name='t Playlist'),Song.objects.get(name='t Evaporate')).playlist
     't Playlist'
     """
-    return PlaylistToSong(track_num=track_num, playlist=playlist, song=song)
+    pts = PlaylistToSong(track_num=track_num, playlist=playlist, song=song)
+    pts.save()
+    return pts
 
 
 def new_playlisttoalbum(playlist: Playlist, album: Album, track_num: int = None):
@@ -216,7 +238,9 @@ def new_playlisttoalbum(playlist: Playlist, album: Album, track_num: int = None)
     >>> new_playlisttoalbum(Playlist.objects.get(name='t Playlist'),Album.objects.get(name='t Evaporate')).playlist
     't playlist'
     """
-    return PlaylistToAlbum(track_num=track_num, playlist=playlist, album=album)
+    pta = PlaylistToAlbum(track_num=track_num, playlist=playlist, album=album)
+    pta.save()
+    return pta
 
 
 def new_playlisttoplaylist(playlist: Playlist, member_playlist: Playlist, track_num: int = None, verbose: bool = True):
@@ -228,7 +252,9 @@ def new_playlisttoplaylist(playlist: Playlist, member_playlist: Playlist, track_
     """
 
     if playlist != member_playlist:
-        return PlaylistToPlaylist(track_num=track_num, playlist=playlist, member_playlist=member_playlist)
+        ptp = PlaylistToPlaylist(track_num=track_num, playlist=playlist, member_playlist=member_playlist)
+        ptp.save()
+        return ptp
     elif verbose:
         print("playlist cannot equal member_playlist")
     return None
@@ -286,45 +312,43 @@ def generate_playlist(name: str, params: [[str, object, object]]):
     return new_playlist(name, [[song, None] for song in songs])
 
 
+def create_test_database():
+    objs = {}
+    objs['popu'] = new_genre('t pop')
+    objs['orch'] = new_genre('t orchestral')
+
+    objs['tri'] = new_artist('t Trivecta')
+    objs['cold'] = new_artist('t Coldplay', [objs['popu']])
+    objs['hill'] = new_artist('t Hillsong')
+    objs['shock'] = new_artist('t Shockline')
+    objs['thom'] = new_artist('t Thomas Bergersen', [objs['orch']])
+
+    objs['eva'] = new_song(name='t Evaporate',
+                           path="H:/Music/[Trance] - Trivecta - Evaporate (feat. Aloma Steele) [Monstercat Release].mp3",
+                           artists=[objs['tri']], arousal=-0.4, valence=1)
+    objs['sky'] = new_song(name='t A Sky Full of Stars', path="H:/Music/A Sky Full Of Stars.mp3", artists=[objs['cold']], arousal=-0.5,
+                   valence=0.8, song_genres=[objs['popu']])
+    objs['al1'] = new_song(name='t Alive', path="H:/Music/Alive(0).mp3", artists=[objs['hill']], arousal=0.1, valence=0.8)
+    objs['al2'] = new_song(name='t Alive', path="H:/Music/Alive.mp3", artists=[objs['shock']], arousal=-0.5, valence=-0.5)
+    objs['always'] = new_song(name='t Always Mine', path="H:/Music/Always Mine.mp3", artists=[objs['thom']], arousal=0.3, valence=0.8,
+                      song_genres=[objs['orch']])
+    objs['b4'] = new_song(name='t Before Time', path="H:/Music/Before Time.mp3", artists=[objs['thom']], arousal=0.3, valence=0.6,
+                  song_genres=[objs['orch']])
+
+    objs['sky_al'] = new_album(name='t A Sky Full of Stars', album_artists=[objs['cold']], songs_and_track_nums=[[objs['sky'], 1]])
+    objs['sun'] = new_album(name='t Sun', album_artists=[objs['thom']], songs_and_track_nums=[[objs['always'], 11], [objs['b4'], 1]])
+
+    return objs
+
+
+def delete_test_db(db_dict):
+    for item in db_dict:
+        item.delete()
+
+
 if __name__ == "__main__":
     import doctest
 
-    ### uncomment if your database is empty
-    # pop = new_genre('t pop')
-    # orch = new_genre('t orchestral')
-    #
-    # tri = new_artist('t Trivecta')
-    # cold = new_artist('t Coldplay', [pop])
-    # hill = new_artist('t Hillsong')
-    # shock = new_artist('t Shockline')
-    # thom = new_artist('t Thomas Bergersen', [orch])
-    #
-    # eva = new_song(name='t Evaporate', path="H:/Music/[Trance] - Trivecta - Evaporate (feat. Aloma Steele) [Monstercat Release].mp3",
-    #                artists=[tri], arousal=-0.4, valence=1)
-    # sky = new_song(name='t A Sky Full of Stars', path="H:/Music/A Sky Full Of Stars.mp3", artists=[cold], arousal=-0.5, valence=0.8, song_genres=[pop])
-    # al1 = new_song(name='t Alive', path="H:/Music/Alive(0).mp3", artists=[hill], arousal=0.1, valence=0.8)
-    # al2 = new_song(name='t Alive', path="H:/Music/Alive.mp3", artists=[shock], arousal=-0.5, valence=-0.5)
-    # always = new_song(name='t Always Mine', path="H:/Music/Always Mine.mp3", artists=[thom], arousal=0.3, valence=0.8, song_genres=[orch])
-    # b4 = new_song(name='t Before Time', path="H:/Music/Before Time.mp3", artists=[thom], arousal=0.3, valence=0.6, song_genres=[orch])
-    #
-    # sky_al = new_album(name='t A Sky Full of Stars', album_artists=[cold], songs_and_track_nums=[[sky, 1]])
-    # sun = new_album(name='t Sun', album_artists=[thom], songs_and_track_nums=[[always, 11], [b4, 1]])
+    create_test_database()
 
     doctest.testmod()
-
-    # pop.delete()
-    # orch.delete()
-    # tri.delete()
-    # cold.delete()
-    # hill.delete()
-    # shock.delete()
-    # thom.delete()
-    # eva.delete()
-    # sky.delete()
-    # al1.delete()
-    # al2.delete()
-    # always.delete()
-    # b4.delete()
-    # sky_al.delete()
-    # sun.delete()
-

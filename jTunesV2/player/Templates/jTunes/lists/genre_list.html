@@ -1,0 +1,22 @@
+{% extends 'jTunes/lists/lists_base.html' %}
+
+{% block page_title %}Genre List{% endblock %}
+{% block table_title %}Genre List{% endblock %}
+
+{% block table %}
+    <table class="song_list">
+    <tr>
+        <th><h2>Genre</h2></th>
+    </tr>
+    {%  if genres %}
+        {% for genre in genres %}
+            <tr>
+                <th class="songs"><a href="{% url 'jTunes:view genre' genre.1 %}">{{ genre.0 }}</a></th>
+            </tr>
+        {% endfor %}
+    {%  endif %}
+    </table>
+{% endblock %}
+
+{% block add_link %}{% url 'jTunes:add genre' %}{% endblock %}
+{% block add_btn_val %}"Add genre"{% endblock %}

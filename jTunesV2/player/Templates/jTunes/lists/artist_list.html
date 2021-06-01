@@ -1,0 +1,55 @@
+{#{%  load static %}#}
+{#<!DOCTYPE html>#}
+{#<html lang="en">#}
+{#<head>#}
+{#    <link rel="stylesheet" href="{% static 'css/style.css' %}">#}
+{#    <meta charset="UTF-8">#}
+{#    <title>Artists</title>#}
+{#</head>#}
+{#<body>#}
+{##}
+{#    <h1>Artists</h1>#}
+{##}
+{#    <form action="{% url 'jTunes:add artist' %}">#}
+{#        <input type="submit" value="Add artist">#}
+{#    </form>#}
+{##}
+{#    <table class="artist_list">#}
+{#        <tr>#}
+{#            <th><h2>Name</h2></th>#}
+{#        </tr>#}
+{#        {%  if artists %}#}
+{#            {% for artist in artists %}#}
+{#                <tr>#}
+{#                    <th class="songs"><a href="{% url 'jTunes:view artist' artist.1 %}">{{ artist.0 }}</a></th>#}
+{#                </tr>#}
+{#            {% endfor %}#}
+{#        {%  endif %}#}
+{#    </table>#}
+{##}
+{##}
+{#</body>#}
+{#</html>#}
+
+{% extends 'jTunes/lists/lists_base.html' %}
+
+{% block page_title %}Artists{% endblock %}
+{% block table_title %}Artists{% endblock %}
+
+{% block table %}
+    <table class="artist_list">
+        <tr>
+            <th><h2>Name</h2></th>
+        </tr>
+        {%  if artists %}
+            {% for artist in artists %}
+                <tr>
+                    <th class="songs"><a href="{% url 'jTunes:view artist' artist.1 %}">{{ artist.0 }}</a></th>
+                </tr>
+            {% endfor %}
+        {%  endif %}
+    </table>
+{% endblock %}
+
+{% block add_link %}{% url 'jTunes:add artist' %}{% endblock %}
+{% block add_btn_val %}"Add artist"{% endblock %}

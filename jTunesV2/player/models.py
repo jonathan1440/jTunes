@@ -1,6 +1,5 @@
 from django.core.validators import MinValueValidator, MaxValueValidator
 from django.db import models
-from django.apps import AppConfig
 
 
 class Item(models.Model):
@@ -74,7 +73,7 @@ class Song(PlayableItem):
         (Keys.Abm, Keys.Abm),
     )
 
-    path = models.FilePathField(path="H:/Music", default="H:/Music")
+    path = models.FilePathField(path="H:/Music", default="H:/Music", blank=True)
     artists = models.ManyToManyField(Artist, blank=True, related_name='artist')
     remix_of = models.ForeignKey('self', on_delete=models.CASCADE, blank=True, null=True)
     composers = models.ManyToManyField(Artist, blank=True, related_name='composer')

@@ -1,0 +1,22 @@
+{% extends 'jTunes/add/add_song.html' %}
+
+{% block title %}{{ song.name }}{% endblock %}
+
+{% block id %}{%  url 'jTunes:edit song' song.id %}{% endblock %}
+
+{% block name_value %}"{{ song.name }}"{% endblock %}
+
+{% block artists_value %}"{{ artists }}"{% endblock %}
+
+{% block file_value %}"{{ song.path }}"{% endblock %}
+
+{% block arousal_value %}"{{ arousal }}"{% endblock %}
+
+{% block valence_value %}"{{ valence }}"{% endblock %}
+
+{% block extra_content %}
+    <br>
+    <form action="{% url 'jTunes:delete song' song.id %}">
+        <input type="submit" value="Delete song">
+    </form>
+{% endblock %}

@@ -1,0 +1,22 @@
+{% extends 'jTunes/add/add_genre.html' %}
+
+{% block title %}{{ genre.name }}{% endblock %}
+{% block page_title %}{% endblock %}
+
+{% block list_link %}{% url 'jTunes:list genres' %}{% endblock %}
+{% block list_link_txt %}"Genre list"{% endblock %}
+
+{% block new_link %}{% url 'jTunes:edit genre' genre.id %}{% endblock %}
+
+{% block form_contents %}
+    <label for="name">Name: </label>
+    <input id="name" type="text" name="name" value={% block name_value %}"{{ genre.name }}"{% endblock %}>
+    <br>
+{% endblock %}
+
+{% block delete %}
+    <br>
+    <form action="{% url 'jTunes:delete genre' genre.id %}">
+        <input type="submit" value="Delete genre">
+    </form>
+{% endblock %}

@@ -1,0 +1,35 @@
+{%  load static %}
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>{% block title %}{{ album.name }}{% endblock %}</title>
+</head>
+<body>
+    <form action="{% block list_link %}{% url 'jTunes:list albums' %}{% endblock %}">
+        <input type="submit" value={% block list_link_txt %}"Song list"{% endblock %}>
+    </form>
+    <form action="{% block id %}{%  url 'jTunes:edit album' album.id %}{% endblock %}" method="post">
+        {%  csrf_token %}
+        <label for="name">Name: </label>
+        <input id="name" type="text" name="name" value={% block name_value %}"{{ album.name }}"{% endblock %}>
+        <br>
+        <label for="artists">Artists (comma separated):</label>
+        <input id="artists" type="text" name="artists" value={% block artists_value %}"{{ artists }}"{% endblock %}>
+        <br>
+        <label for="songs">Songs (comma separated):</label>
+        <input id="songs" type="text" name="songs" value={% block songs_value %}"{{ songs }}"{% endblock %}>
+        <br>
+
+        <br>
+        <input type="submit" value="Save changes">
+        <input type="reset">
+    </form>
+    {% block extra_content %}
+        <br>
+        <form action="{% url 'jTunes:delete album' album.id %}">
+            <input type="submit" value="Delete album">
+        </form>
+    {% endblock %}
+</body>
+</html>

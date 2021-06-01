@@ -1,0 +1,36 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Generate playlist</title>
+</head>
+<body>
+    <h1>Generate playlist</h1>
+
+    <form action="{% url 'jTunes:generating playlist' %}" method="post">
+        {%  csrf_token %}
+        <label for="name">Name: </label>
+        <input id="name" type="text" name="name" value="">
+        <br>
+        <br>
+        <label for="use arousal">Arousal: </label>
+        <input id="use arousal" type="checkbox" name="use arousal">
+        <label for="min arousal value"> Min: </label>
+        <input id="min arousal value" type="number" name="min arousal value" min="-10" max="10" value="-10">
+        <label for="max arousal value"> Max: </label>
+        <input id="max arousal value" type="number" name="max arousal value" min="-10" max="10" value="10">
+        <br>
+        <label for="use valence">Valence: </label>
+        <input id="use valence" type="checkbox" name="use valence">
+        <label for="min valence value"> Min: </label>
+        <input id="min valence value" type="number" name="min valence value" min="-10" max="10" value="-10">
+        <label for="max valence value"> Max: </label>
+        <input id="max valence value" type="number" name="max valence value" min="-10" max="10" value="10">
+        <br>
+
+        <br>
+        <input type="submit" value="Generate playlist">
+        <input type="reset">
+    </form>
+</body>
+</html>

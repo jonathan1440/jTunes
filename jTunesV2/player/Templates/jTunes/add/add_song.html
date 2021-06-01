@@ -1,0 +1,37 @@
+{%  load static %}
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>{% block title %}Add a song{% endblock %}</title>
+</head>
+<body>
+    <form action="{% block list_link %}{% url 'jTunes:list songs' %}{% endblock %}">
+        <input type="submit" value={% block list_link_txt %}"Song list"{% endblock %}>
+    </form>
+    <form action="{% block id %}{%  url 'jTunes:new song' %}{% endblock %}" method="post">
+        {%  csrf_token %}
+        <label for="name">Name: </label>
+        <input id="name" type="text" name="name" value={% block name_value %}""{% endblock %}>
+        <br>
+        <label for="artists">Artists (comma separated):</label>
+        <input id="artists" type="text" name="artists" value={% block artists_value %}""{% endblock %}>
+        <br>
+        <label for="path">Local file path: </label>
+{#        <input id="path" type="file" name="path" value={% block file_value %}""{% endblock %}>#}
+        <input id="path" type="text" name="path" value={% block file_value %}""{% endblock %}>
+        <br>
+        <label for="arousal">Arousal: </label>
+        <input id="arousal" type="number" name="arousal" min="-10" max="10" value={% block arousal_value %}""{% endblock %}>
+        <br>
+        <label for="valence">Valence: </label>
+        <input id="valence" type="number" name="valence" min="-10" max="10" value={% block valence_value %}""{% endblock %}>
+        <br>
+
+        <br>
+        <input type="submit" value="Save changes">
+        <input type="reset">
+    </form>
+    {% block extra_content %}{% endblock %}
+</body>
+</html>

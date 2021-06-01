@@ -1,0 +1,25 @@
+{%  load static %}
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <link rel="stylesheet" href="{% static 'css/style.css' %}">
+    <meta charset="UTF-8">
+    <title>{% block page_title %}List{% endblock %}</title>
+</head>
+<body>
+    <form action="{% url 'jTunes:index' %}">
+        <input type="submit" value="Go home">
+    </form>
+
+    <h1>{% block table_title %}List{% endblock %}</h1>
+
+    {% block table %}
+    {% endblock %}
+
+    <br>
+    <form action="{% block add_link %}{% endblock %}">
+        <input type="submit" value={% block add_btn_val %}{% endblock %}>
+    </form>
+
+</body>
+</html>
