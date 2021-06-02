@@ -20,7 +20,7 @@ DATABASES = {
         'PORT': '5432',
     }
 }
-~~~https://www.guru99.com/postgresql-create-database.html
+~~~
 6. Open a terminal and cd to the repository clone
 7. Run `python -m venv jTunesVenv`
 8. Run `.\jTunesVenv\Scripts\activate`
