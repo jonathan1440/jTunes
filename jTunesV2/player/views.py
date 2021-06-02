@@ -4,7 +4,7 @@ from django.template import loader
 from django.shortcuts import get_object_or_404, render
 from django.urls import reverse
 
-from .models import Song, Artist, Album, Playlist, Genre
+from .models import Song, Artist, Album, Playlist, Genre, PlaylistToSong, PlaylistToAlbum, PlaylistToPlaylist
 import player.helpers as helpers
 
 
@@ -115,16 +115,18 @@ def view_album(request, album_id):
 
 def view_artist(request, artist_id):
     template = loader.get_template('jTunes/view/view_artist.html')
+    artist = get_object_or_404(Artist, id=artist_id)
     context = {
-        'artist': get_object_or_404(Artist, id=artist_id)
+        'artist': artist
     }
     return HttpResponse(template.render(context, request))
 
 
 def view_genre(request, genre_id):
     template = loader.get_template('jTunes/view/view_genre.html')
+    genre = get_object_or_404(Genre, id=genre_id)
     context = {
-        'genre': get_object_or_404(Genre, id=genre_id)
+        'genre': genre
     }
     return HttpResponse(template.render(context, request))
 
@@ -138,7 +140,8 @@ def view_playlist(request, playlist_id):
     [items.append(playlist.name) for playlist in p.playlists.all()]
     context = {
         'playlist': p,
-        'items': ', '.join(items)
+        'items': ', '.join(items),
+        'paths': helpers.get_playlist_paths(p),
     }
     return HttpResponse(template.render(context, request))
 
@@ -216,11 +219,41 @@ def edit_artist(request, artist_id):
 
 
 def edit_genre(request, genre_id):
-    return HttpResponse('edit genre %s' % genre_id)
+    genre = get_object_or_404(Genre, id=genre_id)
+    genre.name = request.POST['name']
+    genre.save()
+    return HttpResponseRedirect(reverse('jTunes:view genre', args=(genre.id,)))
 
 
 def edit_playlist(request, playlist_id):
-    return HttpResponse('Editing playlist ')
+    playlist = get_object_or_404(Playlist, id=playlist_id)
+    playlist.name = request.POST['name']
+    playlist.save()
+    new_items = [i.strip() for i in request.POST['items'].split(',')]
+    old_items = [p.name for p in playlist.songs.all()] + [p.name for p in playlist.albums.all()] + [p.name for p in playlist.playlists.all()]
+    for item in new_items:
+        if item in [song.name for song in Song.objects.all()]:
+            if item not in [p.name for p in playlist.songs.all()]:
+                helpers.new_playlisttosong(playlist, Song.objects.get(name=item))
+        elif item in [album.name for album in Album.objects.all()]:
+            if item not in [p.name for p in playlist.albums.all()]:
+                helpers.new_playlisttoalbum(playlist, Album.objects.get(name=item))
+        elif item in [p.name for p in Playlist.objects.all()]:
+            if playlist != Playlist.objects.get(name=item):
+                if item not in playlist.albums.all():
+                    helpers.new_playlisttoplaylist(playlist, Playlist.objects.get(name=item))
+    for item in old_items:
+        if item not in new_items:
+            if item in [song.name for song in Song.objects.all()]:
+                PlaylistToSong.objects.get(playlist=playlist, song=item).delete()
+            elif item in [album.name for album in Album.objects.all()]:
+                PlaylistToAlbum.objects.get(playlist=playlist, album=item).delete()
+            elif item in [p.name for p in Playlist.objects.all()]:
+                if playlist != Playlist.objects.get(name=item):
+                    PlaylistToPlaylist.objects.get(playlist=playlist, member_playlist=item).delete()
+
+    playlist.save()
+    return HttpResponseRedirect(reverse('jTunes:view playlist', args=(playlist.id,)))
 
 
 def edit_song(request, song_id):
@@ -279,7 +312,7 @@ def new_genre(request):
 
 def new_playlist(request):
     items = []
-    for item in [i.strip for i in request.POST['items'].split(',')]:
+    for item in [i.strip() for i in request.POST['items'].split(',')]:
         if item in [song.name for song in Song.objects.all()]:
             items.append(Song.objects.get(name=item))
         elif item in [album.name for album in Album.objects.all()]:
@@ -291,8 +324,8 @@ def new_playlist(request):
 
 
 def new_song(request):
-    artists = [artist.strip() for artist in request.Post['artists'].split(',')]
-    song = helpers.new_song(name=request.POST['name'], artists=artists)
+    artists = [artist.strip() for artist in request.POST['artists'].split(',')]
+    song = helpers.new_song(name=request.POST['name'], path=request.POST['path'], artists=artists)
 
     return HttpResponseRedirect(reverse('jTunes:view song', args=(song.id,)))
 

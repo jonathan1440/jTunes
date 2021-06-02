@@ -19,6 +19,14 @@
 
 {% block delete %}
     <br>
+    <table>
+    {% for path in paths %}
+        <tr>
+            <th class="songs">{{ path }}</th>
+        </tr>
+    {% endfor %}
+    </table>
+    <br>
     <form action="{% url 'jTunes:delete playlist' playlist.id %}">
         <input type="submit" value="Delete playlist">
     </form>
