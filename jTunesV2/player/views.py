@@ -4,7 +4,8 @@ from django.template import loader
 from django.shortcuts import get_object_or_404, render
 from django.urls import reverse
 
-from .models import Song, Artist, Album, Playlist, Genre, PlaylistToSong, PlaylistToAlbum, PlaylistToPlaylist
+from .models import Song, Artist, Album, Playlist, Genre, PlaylistToSong, PlaylistToAlbum, PlaylistToPlaylist, \
+    AlbumToSong
 import player.helpers as helpers
 
 
@@ -169,56 +170,44 @@ def edit_album(request, album_id):
 
     album.save()
 
-    new_artists = [artist.strip() for artist in request.POST['artists'].split(',')]
-    old_artists = [artist for artist in album.album_artists.all()]
-    # add any newly added artists
-    for artist in new_artists:
-        if artist not in old_artists:
-            #a = Artist.objects.annotate(search=SearchVector('name'), ).filter(search=artist)
-            a = helpers.get_model_instance_obj(Artist, artist)
-            if artist not in [rtist.name for rtist in a]:
-                a = [helpers.new_artist(name=artist)]
-            album.album_artists.add(a[0])
-    # remove any newly removed artists
-    for artist in old_artists:
-        if artist not in new_artists:
-            a = Song.artists.annotate(search=SearchVector('name'), ).filter(search=artist)
-            if artist in [rtist.name for rtist in a]:
-                a[0].album_artists.remove(artist)
-
-    # new_artists = [artist.strip() for artist in request.POST['artists'].split(',')]
-    # old_artists = [artist.name for artist in song.artists.all()]
-    # # add any newly added artists
-    # for artist in new_artists:
-    #     if artist not in old_artists:
-    #         a = Artist.objects.annotate(search=SearchVector('name'), ).filter(search=artist)
-    #         if artist not in [rtist.name for rtist in a]:
-    #             a = [helpers.new_artist(name=artist)]
-    #         song.artists.add(a[0])
-    # # remove any newly removed artists
-    # for artist in old_artists:
-    #     if artist not in new_artists:
-    #         a = song.artists.annotate(search=SearchVector('name'), ).filter(search=artist)
-    #         if artist in a:
-    #             a[0].artists.remove(id=artist.id)
+    # TODO: remove duplicates in new_artists and remove duplicate check below
+    # TODO: check for blank/empty strings
+    # TODO: add through model for song-artist and other non-through relations?
+    # TODO: make list edit helper function or apply above to other list edit code segments
+    new_artists = set([artist.strip() for artist in request.POST['artists'].split(',')])
+    old_artists = set([artist.name for artist in album.album_artists.all()])
+    added_artists = list(new_artists - old_artists)
+    removed_artists = list(old_artists - new_artists)
+    # add any new artists
+    for artist in added_artists:
+        a = Artist.objects.annotate(search=SearchVector('name'), ).filter(search=artist)  # get artist object
+        if artist not in [x.name for x in a]:  # if artist object doesn't already exist
+            a = [helpers.new_artist(name=artist)]  # create new artist object
+        album.album_artists.add(a[0])  # add artist - album relation
+    # remove any removed artists
+    for artist in removed_artists:
+        a = album.album_artists.annotate(search=SearchVector('name'), ).filter(search=artist)  # get related artist object
+        if artist in [x.name for x in a]:  # if related artist object exists
+            album.album_artists.remove(a[0])  # remove it
 
     album.save()
 
-    new_songs = [song.strip() for song in request.POST['songs'].split(',')]
-    old_songs = [song for song in album.songs.all()]
+    new_songs = set([song.strip() for song in request.POST['songs'].split(',')])
+    old_songs = set([song.name for song in album.songs.all()])
+    added_songs = list(new_songs - old_songs)
+    removed_songs = list(old_songs - new_songs)
     # add any newly added artists
-    for song in new_songs:
-        if song not in old_songs:
-            a = album.objects.annotate(search=SearchVector('name'), ).filter(search=song)
-            if song not in [rtist.name for rtist in a]:
-                a = [Song(name=song)]
-            helpers.new_albumtosong(album, a[0])
+    for song in added_songs:
+        a = Song.objects.annotate(search=SearchVector('name'), ).filter(search=song)  # get song object
+        if song not in [x.name for x in a]:  # if song object doesn't exist
+            a = [Song(name=song)]  # create new song object
+        helpers.new_albumtosong(album, a[0])  # add song - album relation
     # remove any newly removed artists
-    for song in old_songs:
-        if song not in new_songs:
-            a = album.album_artists.annotate(search=SearchVector('name'), ).filter(search=song)
-            if song in [rtist.name for rtist in a]:
-                a[0].songs.remove(song)
+    for song in removed_songs:
+        s = Song.objects.annotate(search=SearchVector('name'), ).filter(search=song)[0]  # get song objects
+        ats = AlbumToSong.objects.filter(album=album, song=s)  # get AlbumToSong object
+        if ats:  # if AlbumToSong object exists
+            ats.delete()  # remove song - album relation
 
     album.save()
 
@@ -296,8 +285,8 @@ def edit_song(request, song_id):
     for artist in old_artists:
         if artist not in new_artists:
             a = song.artists.annotate(search=SearchVector('name'), ).filter(search=artist)
-            if artist in a:
-                a[0].artists.remove(id=artist.id)
+            if artist in [x.name for x in a]:
+                song.artists.remove(a[0])
 
     song.save()
 
