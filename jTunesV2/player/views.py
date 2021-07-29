@@ -105,7 +105,7 @@ def view_album(request, album_id):
     template = loader.get_template('jTunes/view/view_album.html')
     album = get_object_or_404(Album, id=album_id)
     context = {
-        'song': album,
+        'album': album,
         'artists': ', '.join([artist.name for artist in album.album_artists.all()]),
         'songs': ', '.join([song.name for song in album.songs.all()]),
     }
@@ -169,12 +169,13 @@ def edit_album(request, album_id):
 
     album.save()
 
-    new_artists = [artist.strip() for artist in request.Post['artists'].split(',')]
+    new_artists = [artist.strip() for artist in request.POST['artists'].split(',')]
     old_artists = [artist for artist in album.album_artists.all()]
     # add any newly added artists
     for artist in new_artists:
         if artist not in old_artists:
-            a = Artist.objects.annotate(search=SearchVector('name'), ).filter(search=artist)
+            #a = Artist.objects.annotate(search=SearchVector('name'), ).filter(search=artist)
+            a = helpers.get_model_instance_obj(Artist, artist)
             if artist not in [rtist.name for rtist in a]:
                 a = [helpers.new_artist(name=artist)]
             album.album_artists.add(a[0])
@@ -184,6 +185,22 @@ def edit_album(request, album_id):
             a = Song.artists.annotate(search=SearchVector('name'), ).filter(search=artist)
             if artist in [rtist.name for rtist in a]:
                 a[0].album_artists.remove(artist)
+
+    # new_artists = [artist.strip() for artist in request.POST['artists'].split(',')]
+    # old_artists = [artist.name for artist in song.artists.all()]
+    # # add any newly added artists
+    # for artist in new_artists:
+    #     if artist not in old_artists:
+    #         a = Artist.objects.annotate(search=SearchVector('name'), ).filter(search=artist)
+    #         if artist not in [rtist.name for rtist in a]:
+    #             a = [helpers.new_artist(name=artist)]
+    #         song.artists.add(a[0])
+    # # remove any newly removed artists
+    # for artist in old_artists:
+    #     if artist not in new_artists:
+    #         a = song.artists.annotate(search=SearchVector('name'), ).filter(search=artist)
+    #         if artist in a:
+    #             a[0].artists.remove(id=artist.id)
 
     album.save()
 
@@ -325,7 +342,7 @@ def new_playlist(request):
 
 def new_song(request):
     artists = [artist.strip() for artist in request.POST['artists'].split(',')]
-    song = helpers.new_song(name=request.POST['name'], path=request.POST['path'], artists=artists)
+    song = helpers.new_song(name=request.POST['name'], path=request.POST['path'], artists=artists, arousal=int(request.POST['arousal'])/10, valence=int(request.POST['valence'])/10)
 
     return HttpResponseRedirect(reverse('jTunes:view song', args=(song.id,)))
 

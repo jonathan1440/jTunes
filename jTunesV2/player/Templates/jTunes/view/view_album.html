@@ -7,9 +7,9 @@
 </head>
 <body>
     <form action="{% block list_link %}{% url 'jTunes:list albums' %}{% endblock %}">
-        <input type="submit" value={% block list_link_txt %}"Song list"{% endblock %}>
+        <input type="submit" value={% block list_link_txt %}"Album list"{% endblock %}>
     </form>
-    <form action="{% block id %}{%  url 'jTunes:edit album' album.id %}{% endblock %}" method="post">
+    <form action="{%  url 'jTunes:edit album' album.id %}" method="post">
         {%  csrf_token %}
         <label for="name">Name: </label>
         <input id="name" type="text" name="name" value={% block name_value %}"{{ album.name }}"{% endblock %}>
