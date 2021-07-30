@@ -73,7 +73,7 @@ class Song(PlayableItem):
         (Keys.Abm, Keys.Abm),
     )
 
-    path = models.FilePathField(path="H:/Music", default="H:/Music", blank=True)
+    path = models.FilePathField(path="H:/Music", default="H:/Music", blank=True, null=True)
     artists = models.ManyToManyField(Artist, blank=True, related_name='artist')
     remix_of = models.ForeignKey('self', on_delete=models.CASCADE, blank=True, null=True)
     composers = models.ManyToManyField(Artist, blank=True, related_name='composer')
@@ -87,8 +87,8 @@ class Song(PlayableItem):
                                            validators=[MinValueValidator(0), MaxValueValidator(100)])
     lufs = models.IntegerField(verbose_name="song loudness in LUFS", blank=True, null=True, default=0,
                                validators=[MinValueValidator(-15), MaxValueValidator(0)])
-    arousal = models.DecimalField(blank=True, null=True, default=None, decimal_places=20, max_digits=21)
-    valence = models.DecimalField(blank=True, null=True, default=None, decimal_places=20, max_digits=21)
+    arousal = models.DecimalField(blank=True, null=True, default=0, decimal_places=20, max_digits=21)
+    valence = models.DecimalField(blank=True, null=True, default=0, decimal_places=20, max_digits=21)
 
 
 class Album(PlayableItem):

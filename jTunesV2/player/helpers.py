@@ -130,9 +130,9 @@ def new_artist(name: str, genres: [Genre.name] = None):
     return a
 
 
-def new_song(name: str, path: str, artists: [Artist.name] = None, remix_of: Song = None, composers: [Artist.name] = None,
+def new_song(name: str, path: str = None, artists: [Artist.name] = None, remix_of: Song = None, composers: [Artist.name] = None,
              year: int = None, song_genres: [Genre.name] = None, length: int = None, tempo: int = None, key: str = None,
-             decibels: int = None, lufs: int = None, arousal: float = None, valence: float = None):
+             decibels: int = None, lufs: int = None, arousal: float = 0, valence: float = 0):
     """
     name and path are required
 

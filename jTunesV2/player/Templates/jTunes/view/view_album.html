@@ -1,3 +1,39 @@
+{#{%  load static %}#}
+{#<!DOCTYPE html>#}
+{#<html lang="en">#}
+{#<head>#}
+{#    <meta charset="UTF-8">#}
+{#    <title>{% block title %}{{ album.name }}{% endblock %}</title>#}
+{#</head>#}
+{#<body>#}
+{#    <form action="{% block list_link %}{% url 'jTunes:list albums' %}{% endblock %}">#}
+{#        <input type="submit" value={% block list_link_txt %}"Album list"{% endblock %}>#}
+{#    </form>#}
+{#    <form action="{%  url 'jTunes:edit album' album.id %}" method="post">#}
+{#        {%  csrf_token %}#}
+{#        <label for="name">Name: </label>#}
+{#        <input id="name" type="text" name="name" value={% block name_value %}"{{ album.name }}"{% endblock %}>#}
+{#        <br>#}
+{#        <label for="artists">Artists (comma separated):</label>#}
+{#        <input id="artists" type="text" name="artists" value={% block artists_value %}"{{ artists }}"{% endblock %}>#}
+{#        <br>#}
+{#        <label for="songs">Songs (comma separated):</label>#}
+{#        <input id="songs" type="text" name="songs" value={% block songs_value %}"{{ songs }}"{% endblock %}>#}
+{#        <br>#}
+{##}
+{#        <br>#}
+{#        <input type="submit" value="Save changes">#}
+{#        <input type="reset">#}
+{#    </form>#}
+{#    {% block extra_content %}#}
+{#        <br>#}
+{#        <form action="{% url 'jTunes:delete album' album.id %}">#}
+{#            <input type="submit" value="Delete album">#}
+{#        </form>#}
+{#    {% endblock %}#}
+{#</body>#}
+{#</html>#}
+
 {%  load static %}
 <!DOCTYPE html>
 <html lang="en">
@@ -9,22 +45,64 @@
     <form action="{% block list_link %}{% url 'jTunes:list albums' %}{% endblock %}">
         <input type="submit" value={% block list_link_txt %}"Album list"{% endblock %}>
     </form>
-    <form action="{%  url 'jTunes:edit album' album.id %}" method="post">
+    <form action="{% block new_link %}{%  url 'jTunes:edit album' album.id %}{% endblock %}" method="post">
         {%  csrf_token %}
         <label for="name">Name: </label>
         <input id="name" type="text" name="name" value={% block name_value %}"{{ album.name }}"{% endblock %}>
         <br>
-        <label for="artists">Artists (comma separated):</label>
-        <input id="artists" type="text" name="artists" value={% block artists_value %}"{{ artists }}"{% endblock %}>
-        <br>
-        <label for="songs">Songs (comma separated):</label>
-        <input id="songs" type="text" name="songs" value={% block songs_value %}"{{ songs }}"{% endblock %}>
-        <br>
-
         <br>
         <input type="submit" value="Save changes">
         <input type="reset">
     </form>
+    <br>
+    <form action="{% url 'jTunes:new albumtoartist' album.id %}" method="post">
+        {%  csrf_token %}
+        <table class="songs">
+            <tr>
+                <th><label for="artist">Artists:</label></th>
+            </tr>
+            {%  if artists %}
+                {% for artist in artists %}
+                    <tr>
+                        <th class="songs"><a href="{% url 'jTunes:view artist' artist.1 %}">{{ artist.0 }}</a></th>
+                        <th class="songs"><a href="{% url 'jTunes:delete albumtoartist' album.id artist.1 %}">remove</a></th>
+                    </tr>
+                {% endfor %}
+            {%  endif %}
+            <tr>
+                <th><input id="artist" type="text" name="artist" value="Artist"></th>
+                <th><input type="submit" value="Add"></th>
+            </tr>
+        </table>
+    </form>
+    <br>
+    <br>
+    <form action="{% url 'jTunes:new albumtosong' album.id %}" method="post">
+        {%  csrf_token %}
+        Songs:
+        <table class="songs">
+            <tr>
+                <th><label for="song">Song</label></th>
+                <th><label for="artists">Song artists</label></th>
+                <th></th>
+            </tr>
+            {%  if songs %}
+                {% for song in songs %}
+                    <tr>
+                        <th class="songs"><a href="{% url 'jTunes:view song' song.1 %}">{{ song.0 }}</a></th>
+                        <th class="songs">{{ song.3 }}</th>
+                        <th class="songs"><a href="{% url 'jTunes:delete albumtosong' song.2 %}">remove</a></th>
+                    </tr>
+                {% endfor %}
+            {%  endif %}
+            <tr>
+                <th><input id="song" type="text" name="song" value="Song"></th>
+                <th><input id="artists" type="text" name="artists" value="Artists (comma seperated)"></th>
+                <th><input type="submit" value="Add"></th>
+            </tr>
+        </table>
+    </form>
+    <br>
     {% block extra_content %}
         <br>
         <form action="{% url 'jTunes:delete album' album.id %}">

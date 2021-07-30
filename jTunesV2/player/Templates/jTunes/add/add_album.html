@@ -1,24 +1,23 @@
-{% extends 'jTunes/add/add_base.html' %}
-
-{% block title %}New album{% endblock %}
-
-{% block page_title %}New album{% endblock %}
-
-{% block list_link %}{%  url 'jTunes:list albums' %}{% endblock %}
-{% block list_link_txt %}"Album list"{% endblock %}
-
-{% block new_link %}{%  url 'jTunes:new album' %}{% endblock %}
-
-{% block form_contents %}
-    <label for="name">Name: </label>
-    <input id="name" type="text" name="name" value={% block name_value %}""{% endblock %}>
+{%  load static %}
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>{% block title %}{{ album.name }}{% endblock %}</title>
+</head>
+<body>
+    <form action="{% block list_link %}{% url 'jTunes:list albums' %}{% endblock %}">
+        <input type="submit" value={% block list_link_txt %}"Album list"{% endblock %}>
+    </form>
     <br>
-    <label for="artists">Artists (comma separated):</label>
-    <input id="artists" type="text" name="artists" value={% block artists_value %}""{% endblock %}>
-    <br>
-    <label for="songs">Songs (comma separated):</label>
-    <input id="songs" type="text" name="songs" value={% block songs_value %}""{% endblock %}>
-    <br>
-{% endblock %}
-
-{% block delete %}{% endblock %}
+    <form action="{% block new_link %}{%  url 'jTunes:new album' %}{% endblock %}" method="post">
+        {%  csrf_token %}
+        <label for="name">Name: </label>
+        <input id="name" type="text" name="name" value={% block name_value %}""{% endblock %}>
+        <br>
+        <br>
+        <input type="submit" value="Save changes">
+        <input type="reset">
+    </form>
+</body>
+</html>

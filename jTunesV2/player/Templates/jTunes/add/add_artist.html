@@ -1,18 +1,26 @@
-{% extends 'jTunes/add/add_base.html' %}
-
-{% block title %}Add artist{% endblock %}
-
-{% block list_link %}{%  url 'jTunes:list artists' %}{% endblock %}
-{% block list_link_txt %}"Artist list"{% endblock %}
-
-{% block page_title %}New Artist{% endblock %}
-
-{% block new_link %}{%  url 'jTunes:new artist' %}{% endblock %}
-
-{% block form_contents %}
-    <label for="name">Name: </label>
-    <input id="name" type="text" name="name" value={% block name_value %}{% endblock %}>
-    <br>
-{% endblock %}
-
-{% block delete %}{% endblock %}
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>{% block title %}Add artist{% endblock %}</title>
+</head>
+<body>
+    <form action="{% block list_link %}{%  url 'jTunes:list artists' %}{% endblock %}">
+        <input type="submit" value={% block list_link_txt %}"Artist list"{% endblock %}>
+    </form>
+    <h1>{% block page_title %}New Artist{% endblock %}</h1>
+    <form action="{% block new_link %}{%  url 'jTunes:new artist' %}{% endblock %}" method="post">
+        {%  csrf_token %}
+        {% block form_contents %}
+            <label for="name">Name: </label>
+            <input id="name" type="text" name="name" value={% block name_value %}{% endblock %}>
+            <br>
+        {% endblock %}
+        <br>
+        <input type="submit" value="Save changes">
+        <input type="reset">
+    </form>
+    <form action=""></form>
+    {% block delete %}{% endblock %}
+</body>
+</html>

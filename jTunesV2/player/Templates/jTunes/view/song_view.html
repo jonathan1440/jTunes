@@ -1,22 +1,61 @@
-{% extends 'jTunes/add/add_song.html' %}
+{%  load static %}
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>{% block title %}{{ song.name }}{% endblock %}</title>
+</head>
+<body>
+    <form action="{% block list_link %}{% url 'jTunes:list songs' %}{% endblock %}">
+        <input type="submit" value={% block list_link_txt %}"Song list"{% endblock %}>
+    </form>
+    <br>
+    <form action="{% block id %}{%  url 'jTunes:edit song' song.id %}{% endblock %}" method="post">
+        {%  csrf_token %}
+        <label for="name">Name: </label>
+        <input id="name" type="text" name="name" value={% block name_value %}"{{ song.name }}"{% endblock %}>
+        <br>
+        <label for="path">Local file path: </label>
+{#        <input id="path" type="file" name="path" value={% block file_value %}""{% endblock %}>#}
+        <input id="path" type="text" name="path" value={% block file_value %}"{{ song.path }}"{% endblock %}>
+        <br>
+        <label for="arousal">Arousal: </label>
+        <input id="arousal" type="number" name="arousal" min="-10" max="10" value={% block arousal_value %}"{{ arousal }}"{% endblock %}>
+        <br>
+        <label for="valence">Valence: </label>
+        <input id="valence" type="number" name="valence" min="-10" max="10" value={% block valence_value %}"{{ valence }}"{% endblock %}>
+        <br>
 
-{% block title %}{{ song.name }}{% endblock %}
-
-{% block id %}{%  url 'jTunes:edit song' song.id %}{% endblock %}
-
-{% block name_value %}"{{ song.name }}"{% endblock %}
-
-{% block artists_value %}"{{ artists }}"{% endblock %}
-
-{% block file_value %}"{{ song.path }}"{% endblock %}
-
-{% block arousal_value %}"{{ arousal }}"{% endblock %}
-
-{% block valence_value %}"{{ valence }}"{% endblock %}
-
-{% block extra_content %}
+        <br>
+        <input type="submit" value="Save changes">
+        <input type="reset">
+    </form>
+    <br>
+    <form action="{% url 'jTunes:new songtoartist' song.id %}" method="post">
+        {%  csrf_token %}
+        <table class="songs">
+            <tr>
+                <th><label for="artist">Artists:</label></th>
+            </tr>
+            {%  if artists %}
+                {% for artist in artists %}
+                    <tr>
+                        <th class="songs"><a href="{% url 'jTunes:view artist' artist.1 %}">{{ artist.0 }}</a></th>
+                        <th class="songs"><a href="{% url 'jTunes:delete songtoartist' song.id artist.1 %}">remove</a></th>
+                    </tr>
+                {% endfor %}
+            {%  endif %}
+            <tr>
+                <th><input id="artist" type="text" name="artist" value="Artist"></th>
+                <th><input type="submit" value="Add"></th>
+            </tr>
+        </table>
+    </form>
+    <br>
+    {% block extra_content %}
     <br>
     <form action="{% url 'jTunes:delete song' song.id %}">
         <input type="submit" value="Delete song">
-    </form>
-{% endblock %}
+    </form>{% endblock %}
+</body>
+</html>

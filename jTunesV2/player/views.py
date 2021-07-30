@@ -8,7 +8,6 @@ from .models import Song, Artist, Album, Playlist, Genre, PlaylistToSong, Playli
     AlbumToSong
 import player.helpers as helpers
 
-
 """ INDEX VIEW """
 
 
@@ -18,13 +17,224 @@ def index(request):
     return HttpResponse(template.render(context, request))
 
 
+""" ADD ___ VIEWS """
+
+
+def add_album(request):
+    template = loader.get_template('jTunes/add/add_album.html')
+    context = {
+        "album": Album.objects.all()[1]
+    }
+    return HttpResponse(template.render(context, request))
+
+
+def add_artist(request):
+    template = loader.get_template('jTunes/add/add_artist.html')
+    context = {}
+    return HttpResponse(template.render(context, request))
+
+
+def add_genre(request):
+    template = loader.get_template('jTunes/add/add_genre.html')
+    context = {}
+    return HttpResponse(template.render(context, request))
+
+
+def add_playlist(request):
+    template = loader.get_template('jTunes/add/add_playlist.html')
+    context = {}
+    return HttpResponse(template.render(context, request))
+
+
+def add_song(request):
+    template = loader.get_template('jTunes/add/add_song.html')
+    context = {}
+    return HttpResponse(template.render(context, request))
+
+
+""" DELETE ___ VIEWS """
+
+
+def delete_album(request, album_id):
+    Album.objects.get(id=album_id).delete()
+
+    return HttpResponseRedirect(reverse('jTunes:list albums'))
+
+
+def delete_albumtoartist(request, album_id, artist_id):
+    artist = get_object_or_404(Artist, id=artist_id)
+    album = get_object_or_404(Album, id=album_id)
+    album.album_artists.remove(artist)
+
+    return HttpResponseRedirect(reverse('jTunes:view album', args=(album_id,)))
+
+
+def delete_artisttogenre(request, artist_id, genre_id):
+    artist = get_object_or_404(Artist, id=artist_id)
+    genre = get_object_or_404(Genre, id=genre_id)
+    artist.genres.remove(genre)
+
+    return HttpResponseRedirect(reverse('jTunes:view artist', args=(artist_id,)))
+
+
+def delete_albumtosong(request, albumtosong_id):
+    ats = get_object_or_404(AlbumToSong, id=albumtosong_id)
+    album_id = ats.album.id
+    ats.delete()
+
+    return HttpResponseRedirect(reverse('jTunes:view album', args=(album_id,)))
+
+
+def delete_artist(request, artist_id):
+    Artist.objects.get(id=artist_id).delete()
+
+    return HttpResponseRedirect(reverse('jTunes:list artists'))
+
+
+def delete_genre(request, genre_id):
+    Genre.objects.get(id=genre_id).delete()
+
+    return HttpResponseRedirect(reverse('jTunes:list genres'))
+
+
+def delete_playlist(request, playlist_id):
+    Playlist.objects.get(id=playlist_id).delete()
+
+    return HttpResponseRedirect(reverse('jTunes:list playlists'))
+
+
+def delete_playlisttoitem(request, playlist_id):
+
+    return HttpResponseRedirect(reverse('jTunes:view playlist', args=(playlist_id,)))
+
+
+def delete_song(request, song_id):
+    Song.objects.get(id=song_id).delete()
+
+    return HttpResponseRedirect(reverse('jTunes:list songs'))
+
+
+def delete_songtoartist(request, song_id, artist_id):
+    song = get_object_or_404(Song, id=song_id)
+    artist = get_object_or_404(Artist, id=artist_id)
+    song.artists.remove(artist)
+
+    return HttpResponseRedirect(reverse('jTunes:view song', args=(song_id,)))
+
+
+
+""" EDIT ___ VIEWS """
+
+
+def edit_album(request, album_id):
+    album = get_object_or_404(Album, id=album_id)
+
+    album.name = request.POST['name']
+
+    album.save()
+
+    return HttpResponseRedirect(reverse('jTunes:view album', args=(album.id,)))
+
+
+def edit_artist(request, artist_id):
+    artist = get_object_or_404(Artist, id=artist_id)
+
+    artist.name = request.POST['name']
+
+    artist.save()
+
+    return HttpResponseRedirect(reverse('jTunes:view artist', args=(artist.id,)))
+
+
+def edit_genre(request, genre_id):
+    genre = get_object_or_404(Genre, id=genre_id)
+    genre.name = request.POST['name']
+    genre.save()
+    return HttpResponseRedirect(reverse('jTunes:view genre', args=(genre.id,)))
+
+
+def edit_playlist(request, playlist_id):
+    playlist = get_object_or_404(Playlist, id=playlist_id)
+    playlist.name = request.POST['name']
+    playlist.save()
+    new_items = [i.strip() for i in request.POST['items'].split(',')]
+    old_items = [p.name for p in playlist.songs.all()] + [p.name for p in playlist.albums.all()] + [p.name for p in
+                                                                                                    playlist.playlists.all()]
+    for item in new_items:
+        if item in [song.name for song in Song.objects.all()]:
+            if item not in [p.name for p in playlist.songs.all()]:
+                helpers.new_playlisttosong(playlist, Song.objects.get(name=item))
+        elif item in [album.name for album in Album.objects.all()]:
+            if item not in [p.name for p in playlist.albums.all()]:
+                helpers.new_playlisttoalbum(playlist, Album.objects.get(name=item))
+        elif item in [p.name for p in Playlist.objects.all()]:
+            if playlist != Playlist.objects.get(name=item):
+                if item not in playlist.albums.all():
+                    helpers.new_playlisttoplaylist(playlist, Playlist.objects.get(name=item))
+    for item in old_items:
+        if item not in new_items:
+            if item in [song.name for song in Song.objects.all()]:
+                PlaylistToSong.objects.get(playlist=playlist, song=item).delete()
+            elif item in [album.name for album in Album.objects.all()]:
+                PlaylistToAlbum.objects.get(playlist=playlist, album=item).delete()
+            elif item in [p.name for p in Playlist.objects.all()]:
+                if playlist != Playlist.objects.get(name=item):
+                    PlaylistToPlaylist.objects.get(playlist=playlist, member_playlist=item).delete()
+
+    playlist.save()
+    return HttpResponseRedirect(reverse('jTunes:view playlist', args=(playlist.id,)))
+
+
+def edit_song(request, song_id):
+    song = get_object_or_404(Song, id=song_id)
+
+    song.name = request.POST['name']
+    song.arousal = int(request.POST['arousal']) / 10
+    song.valence = int(request.POST['valence']) / 10
+    song.path = request.POST['path']
+
+    song.save()
+
+    return HttpResponseRedirect(reverse('jTunes:view song', args=(song.id,)))
+
+
+""" GENERATE ___ VIEWS """
+
+
+def generate_playlist(request):
+    template = loader.get_template('jTunes/generate_playlist.html')
+    context = {}
+    return HttpResponse(template.render(context, request))
+
+
+def generating_playlist(request):
+    use_a = request.POST.get('use arousal', False)
+    use_v = request.POST.get('use valence', False)
+    min_a = int(request.POST['min arousal value'])
+    max_a = int(request.POST['max arousal value'])
+    min_v = int(request.POST['min valence value'])
+    max_v = int(request.POST['max valence value'])
+    songs = []
+    for song in Song.objects.all():
+        in_a = song.arousal in range(min(min_a, max_a), max(min_a, max_a))
+        in_v = song.valence in range(min(min_v, max_v), max(min_v, max_v))
+        if use_a and (not use_v) and in_a or \
+                use_v and (not use_a) and in_v or \
+                use_v and use_a and in_a and in_v or \
+                (not use_a) and (not use_v):
+            songs.append(song)
+    playlist = helpers.new_playlist(name=request.POST['name'], items_and_track_nums=[[song, None] for song in songs])
+    print(playlist.id)
+    return HttpResponseRedirect(reverse('jTunes:view playlist'), args=(playlist.id,))
+
+
 """ LIST ___ VIEWS """
 
 
 def list_albums(request):
     template = loader.get_template('jTunes/lists/album_list.html')
     context = {
-        'albums': [[album.name, album.id]for album in Album.objects.all()]
+        'albums': [[album.name, album.id] for album in Album.objects.all()]
     }
     return HttpResponse(template.render(context, request))
 
@@ -66,37 +276,128 @@ def list_songs(request):
     return HttpResponse(template.render(context, request))
 
 
-""" ADD ___ VIEWS """
+""" NEW ___ VIEWS """
 
 
-def add_album(request):
-    template = loader.get_template('jTunes/add/add_album.html')
-    context = {}
-    return HttpResponse(template.render(context, request))
+def new_album(request):
+    # artists = [artist.strip() for artist in request.POST['artists'].split(',')]
+    # songs = [[song.strip(), None] for song in request.POST['songs'].split(',')]
+    album = helpers.new_album(name=request.POST['name'])  # , album_artists=artists, songs_and_track_nums=songs)
+
+    return HttpResponseRedirect(reverse('jTunes:view album', args=(album.id,)))
 
 
-def add_artist(request):
-    template = loader.get_template('jTunes/add/add_artist.html')
-    context = {}
-    return HttpResponse(template.render(context, request))
+def new_albumtoartist(request, album_id):
+    album = get_object_or_404(Album, id=album_id)
+    artist = request.POST['artist'].strip()
+
+    if artist == 'Artist':
+        return HttpResponseRedirect(reverse('jTunes:view album', args=(album_id,)))
+
+    if artist:
+        artists = Artist.objects.annotate(search=SearchVector('name'), ).filter(search=artist)
+        if artists:
+            album.album_artists.add(artists[0])
+        else:
+            album.album_artists.add(helpers.new_artist(name=artist))
+
+    return HttpResponseRedirect(reverse('jTunes:view album', args=(album_id,)))
 
 
-def add_genre(request):
-    template = loader.get_template('jTunes/add/add_genre.html')
-    context = {}
-    return HttpResponse(template.render(context, request))
+def new_artisttogenre(request, artist_id):
+    artist = get_object_or_404(Artist, id=artist_id)
+    genre = request.POST['genre'].strip()
+
+    if genre == 'Genre':
+        return HttpResponseRedirect(reverse('jTunes:view artist', args=(artist_id,)))
+
+    if genre:
+        genres = Genre.objects.annotate(search=SearchVector('name'), ).filter(search=genre)
+        if genres:
+            artist.genres.add(genres[0])
+        else:
+            artist.genres.add(helpers.new_genre(name=genre))
+
+    return HttpResponseRedirect(reverse('jTunes:view artist', args=(artist_id,)))
 
 
-def add_playlist(request):
-    template = loader.get_template('jTunes/add/add_playlist.html')
-    context = {}
-    return HttpResponse(template.render(context, request))
+def new_albumtosong(request, album_id):
+    if request.POST['song'] == 'Song' or \
+            not (request.POST['song'] and request.POST['artists']):
+        return HttpResponseRedirect(reverse('jTunes:view album', args=(album_id,)))
+
+    album = get_object_or_404(Album, id=album_id)
+    songs = Song.objects.annotate(search=SearchVector('name'), ).filter(name=request.POST['song'].strip())
+    artists = [artist.strip() for artist in request.POST['artists'].split(',')]
+
+    if len(songs) > 0:
+        for song in songs:
+            if artists is None or artists == ["Artists (comma seperated)"]:
+                helpers.new_albumtosong(album, song)
+                return HttpResponseRedirect(reverse('jTunes:view album', args=(album_id,)))
+            elif artists == [a.name for a in song.artists.all()]:
+                helpers.new_albumtosong(album, song)
+                return HttpResponseRedirect(reverse('jTunes:view album', args=(album_id,)))
+
+    song = helpers.new_song(name=request.POST['song'].strip(), artists=artists)
+    helpers.new_albumtosong(album, song)
+
+    return HttpResponseRedirect(reverse('jTunes:view album', args=(album_id,)))
 
 
-def add_song(request):
-    template = loader.get_template('jTunes/add/add_song.html')
-    context = {}
-    return HttpResponse(template.render(context, request))
+def new_artist(request):
+    artist = helpers.new_artist(name=request.POST['name'])
+
+    return HttpResponseRedirect(reverse('jTunes:view artist', args=(artist.id,)))
+
+
+def new_genre(request):
+    genre = helpers.new_genre(name=request.POST['name'])
+
+    return HttpResponseRedirect(reverse('jTunes:view genre', args=(genre.id,)))
+
+
+def new_playlist(request):
+    items = []
+    for item in [i.strip() for i in request.POST['items'].split(',')]:
+        if item in [song.name for song in Song.objects.all()]:
+            items.append(Song.objects.get(name=item))
+        elif item in [album.name for album in Album.objects.all()]:
+            items.append(Album.objects.get(name=item))
+        elif item in [playlist.name for playlist in Playlist.objects.all()]:
+            items.append(Playlist.objects.get(name=item))
+    playlist = helpers.new_playlist(name=request.POST['name'], items_and_track_nums=[[item, None] for item in items])
+
+    return HttpResponseRedirect(reverse('jTunes:view playlist', args=(playlist.id,)))
+
+
+def new_playlisttoitem(request, playlist_id):
+
+    return HttpResponseRedirect(reverse('jTunes:view playlist', args=(playlist_id,)))
+
+
+def new_song(request):
+    song = helpers.new_song(name=request.POST['name'], path=request.POST['path'], artists=[],
+                            arousal=int(request.POST['arousal']) / 10, valence=int(request.POST['valence']) / 10)
+
+    return HttpResponseRedirect(reverse('jTunes:view song', args=(song.id,)))
+
+
+def new_songtoartist(request, song_id):
+    song = get_object_or_404(Song, id=song_id)
+    artist = request.POST['artist'].strip()
+
+    if artist == 'Artist':
+        return HttpResponseRedirect(reverse('jTunes:view song', args=(song_id,)))
+
+    if artist:
+        artists = Artist.objects.annotate(search=SearchVector('name'), ).filter(search=artist)
+        if artists:
+            song.artists.add(artists[0])
+        else:
+            song.artists.add(helpers.new_artist(name=artist))
+
+    return HttpResponseRedirect(reverse('jTunes:view song', args=(song_id,)))
 
 
 """ VIEW ___ VIEWS """
@@ -105,10 +406,12 @@ def add_song(request):
 def view_album(request, album_id):
     template = loader.get_template('jTunes/view/view_album.html')
     album = get_object_or_404(Album, id=album_id)
+    ats_relations = album.albumtosong_set.all()
     context = {
         'album': album,
-        'artists': ', '.join([artist.name for artist in album.album_artists.all()]),
-        'songs': ', '.join([song.name for song in album.songs.all()]),
+        'artists': [[artist.name, artist.id] for artist in album.album_artists.all()],
+        'songs': [[x.song.name, x.song.id, x.id, ', '.join([artist.name for artist in x.song.artists.all()])] for x in
+                  ats_relations],
     }
 
     return HttpResponse(template.render(context, request))
@@ -118,7 +421,8 @@ def view_artist(request, artist_id):
     template = loader.get_template('jTunes/view/view_artist.html')
     artist = get_object_or_404(Artist, id=artist_id)
     context = {
-        'artist': artist
+        'artist': artist,
+        'genres': [[genre.name, genre.id] for genre in artist.genres.all()]
     }
     return HttpResponse(template.render(context, request))
 
@@ -152,248 +456,9 @@ def view_song(request, song_id):
     song = get_object_or_404(Song, id=song_id)
     context = {
         'song': song,
-        'artists': ', '.join([artist.name for artist in song.artists.all()]),
+        'artists': [[artist.name, artist.id] for artist in song.artists.all()],
         'arousal': round(song.arousal * 10, 0),
         'valence': round(song.valence * 10, 0),
     }
 
     return HttpResponse(template.render(context, request))
-
-
-""" EDIT ___ VIEWS """
-
-
-def edit_album(request, album_id):
-    album = get_object_or_404(Album, id=album_id)
-
-    album.name = request.POST['name']
-
-    album.save()
-
-    # TODO: remove duplicates in new_artists and remove duplicate check below
-    # TODO: check for blank/empty strings
-    # TODO: add through model for song-artist and other non-through relations?
-    # TODO: make list edit helper function or apply above to other list edit code segments
-    new_artists = set([artist.strip() for artist in request.POST['artists'].split(',')])
-    old_artists = set([artist.name for artist in album.album_artists.all()])
-    added_artists = list(new_artists - old_artists)
-    removed_artists = list(old_artists - new_artists)
-    # add any new artists
-    for artist in added_artists:
-        a = Artist.objects.annotate(search=SearchVector('name'), ).filter(search=artist)  # get artist object
-        if artist not in [x.name for x in a]:  # if artist object doesn't already exist
-            a = [helpers.new_artist(name=artist)]  # create new artist object
-        album.album_artists.add(a[0])  # add artist - album relation
-    # remove any removed artists
-    for artist in removed_artists:
-        a = album.album_artists.annotate(search=SearchVector('name'), ).filter(search=artist)  # get related artist object
-        if artist in [x.name for x in a]:  # if related artist object exists
-            album.album_artists.remove(a[0])  # remove it
-
-    album.save()
-
-    new_songs = set([song.strip() for song in request.POST['songs'].split(',')])
-    old_songs = set([song.name for song in album.songs.all()])
-    added_songs = list(new_songs - old_songs)
-    removed_songs = list(old_songs - new_songs)
-    # add any newly added artists
-    for song in added_songs:
-        a = Song.objects.annotate(search=SearchVector('name'), ).filter(search=song)  # get song object
-        if song not in [x.name for x in a]:  # if song object doesn't exist
-            a = [Song(name=song)]  # create new song object
-        helpers.new_albumtosong(album, a[0])  # add song - album relation
-    # remove any newly removed artists
-    for song in removed_songs:
-        s = Song.objects.annotate(search=SearchVector('name'), ).filter(search=song)[0]  # get song objects
-        ats = AlbumToSong.objects.filter(album=album, song=s)  # get AlbumToSong object
-        if ats:  # if AlbumToSong object exists
-            ats.delete()  # remove song - album relation
-
-    album.save()
-
-    return HttpResponseRedirect(reverse('jTunes:view album', args=(album.id,)))
-
-
-def edit_artist(request, artist_id):
-    artist = get_object_or_404(Artist, id=artist_id)
-
-    artist.name = request.POST['name']
-
-    artist.save()
-
-    return HttpResponseRedirect(reverse('jTunes:view artist', args=(artist.id,)))
-
-
-def edit_genre(request, genre_id):
-    genre = get_object_or_404(Genre, id=genre_id)
-    genre.name = request.POST['name']
-    genre.save()
-    return HttpResponseRedirect(reverse('jTunes:view genre', args=(genre.id,)))
-
-
-def edit_playlist(request, playlist_id):
-    playlist = get_object_or_404(Playlist, id=playlist_id)
-    playlist.name = request.POST['name']
-    playlist.save()
-    new_items = [i.strip() for i in request.POST['items'].split(',')]
-    old_items = [p.name for p in playlist.songs.all()] + [p.name for p in playlist.albums.all()] + [p.name for p in playlist.playlists.all()]
-    for item in new_items:
-        if item in [song.name for song in Song.objects.all()]:
-            if item not in [p.name for p in playlist.songs.all()]:
-                helpers.new_playlisttosong(playlist, Song.objects.get(name=item))
-        elif item in [album.name for album in Album.objects.all()]:
-            if item not in [p.name for p in playlist.albums.all()]:
-                helpers.new_playlisttoalbum(playlist, Album.objects.get(name=item))
-        elif item in [p.name for p in Playlist.objects.all()]:
-            if playlist != Playlist.objects.get(name=item):
-                if item not in playlist.albums.all():
-                    helpers.new_playlisttoplaylist(playlist, Playlist.objects.get(name=item))
-    for item in old_items:
-        if item not in new_items:
-            if item in [song.name for song in Song.objects.all()]:
-                PlaylistToSong.objects.get(playlist=playlist, song=item).delete()
-            elif item in [album.name for album in Album.objects.all()]:
-                PlaylistToAlbum.objects.get(playlist=playlist, album=item).delete()
-            elif item in [p.name for p in Playlist.objects.all()]:
-                if playlist != Playlist.objects.get(name=item):
-                    PlaylistToPlaylist.objects.get(playlist=playlist, member_playlist=item).delete()
-
-    playlist.save()
-    return HttpResponseRedirect(reverse('jTunes:view playlist', args=(playlist.id,)))
-
-
-def edit_song(request, song_id):
-    song = get_object_or_404(Song, id=song_id)
-
-    song.name = request.POST['name']
-    song.arousal = int(request.POST['arousal']) / 10
-    song.valence = int(request.POST['valence']) / 10
-    song.path = request.POST['path']
-
-    song.save()
-
-    new_artists = [artist.strip() for artist in request.POST['artists'].split(',')]
-    old_artists = [artist.name for artist in song.artists.all()]
-    # add any newly added artists
-    for artist in new_artists:
-        if artist not in old_artists:
-            a = Artist.objects.annotate(search=SearchVector('name'), ).filter(search=artist)
-            if artist not in [rtist.name for rtist in a]:
-                a = [helpers.new_artist(name=artist)]
-            song.artists.add(a[0])
-    # remove any newly removed artists
-    for artist in old_artists:
-        if artist not in new_artists:
-            a = song.artists.annotate(search=SearchVector('name'), ).filter(search=artist)
-            if artist in [x.name for x in a]:
-                song.artists.remove(a[0])
-
-    song.save()
-
-    return HttpResponseRedirect(reverse('jTunes:view song', args=(song.id,)))
-
-
-""" NEW ___ VIEWS """
-
-
-def new_album(request):
-    artists = [artist.strip() for artist in request.POST['artists'].split(',')]
-    songs = [[song.strip(), None] for song in request.POST['songs'].split(',')]
-    album = helpers.new_album(name=request.POST['name'], album_artists=artists, songs_and_track_nums=songs)
-
-    return HttpResponseRedirect(reverse('jTunes:view album', args=(album.id,)))
-
-
-def new_artist(request):
-    artist = helpers.new_artist(name=request.POST['name'])
-
-    return HttpResponseRedirect(reverse('jTunes:view artist', args=(artist.id,)))
-
-
-def new_genre(request):
-    genre = helpers.new_genre(name=request.POST['name'])
-
-    return HttpResponseRedirect(reverse('jTunes:view genre', args=(genre.id,)))
-
-
-def new_playlist(request):
-    items = []
-    for item in [i.strip() for i in request.POST['items'].split(',')]:
-        if item in [song.name for song in Song.objects.all()]:
-            items.append(Song.objects.get(name=item))
-        elif item in [album.name for album in Album.objects.all()]:
-            items.append(Album.objects.get(name=item))
-        elif item in [playlist.name for playlist in Playlist.objects.all()]:
-            items.append(Playlist.objects.get(name=item))
-    playlist = helpers.new_playlist(name=request.POST['name'], items_and_track_nums=[[item, None] for item in items])
-    return HttpResponseRedirect(reverse('jTunes:view playlist', args=(playlist.id,)))
-
-
-def new_song(request):
-    artists = [artist.strip() for artist in request.POST['artists'].split(',')]
-    song = helpers.new_song(name=request.POST['name'], path=request.POST['path'], artists=artists, arousal=int(request.POST['arousal'])/10, valence=int(request.POST['valence'])/10)
-
-    return HttpResponseRedirect(reverse('jTunes:view song', args=(song.id,)))
-
-
-""" DELETE ___ VIEWS """
-
-
-def delete_album(request, album_id):
-    Album.objects.get(id=album_id).delete()
-
-    return HttpResponseRedirect(reverse('jTunes:list albums'))
-
-
-def delete_artist(request, artist_id):
-    Artist.objects.get(id=artist_id).delete()
-
-    return HttpResponseRedirect(reverse('jTunes:list artists'))
-
-
-def delete_genre(request, genre_id):
-    Genre.objects.get(id=genre_id).delete()
-
-    return HttpResponseRedirect(reverse('jTunes:list genres'))
-
-
-def delete_playlist(request, playlist_id):
-    Playlist.objects.get(id=playlist_id).delete()
-
-    return HttpResponseRedirect(reverse('jTunes:list playlists'))
-
-
-def delete_song(request, song_id):
-    Song.objects.get(id=song_id).delete()
-
-    return HttpResponseRedirect(reverse('jTunes:list songs'))
-
-
-""" GENERATE ___ VIEWS """
-
-
-def generate_playlist(request):
-    template = loader.get_template('jTunes/generate_playlist.html')
-    context = {}
-    return HttpResponse(template.render(context, request))
-
-
-def generating_playlist(request):
-    use_a = request.POST.get('use arousal', False)
-    use_v = request.POST.get('use valence', False)
-    min_a = int(request.POST['min arousal value'])
-    max_a = int(request.POST['max arousal value'])
-    min_v = int(request.POST['min valence value'])
-    max_v = int(request.POST['max valence value'])
-    songs = []
-    for song in Song.objects.all():
-        in_a = song.arousal in range(min(min_a, max_a), max(min_a, max_a))
-        in_v = song.valence in range(min(min_v, max_v), max(min_v, max_v))
-        if use_a and (not use_v) and in_a or \
-                use_v and (not use_a) and in_v or \
-                use_v and use_a and in_a and in_v or \
-                (not use_a) and (not use_v):
-            songs.append(song)
-    playlist = helpers.new_playlist(name=request.POST['name'], items_and_track_nums=[[song, None] for song in songs])
-    print(playlist.id)
-    return HttpResponseRedirect(reverse('jTunes:view playlist'), args=(playlist.id,))
