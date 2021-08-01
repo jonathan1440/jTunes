@@ -39,7 +39,7 @@ urlpatterns = [
     path('playlists/new/generating/', views.generating_playlist, name='generating playlist'),
     path('playlists/delete/<int:playlist_id>/', views.delete_playlist, name='delete playlist'),
 
-    path('playlilisttoitem/delete/<int:playlist_id>/<str:item_type>/<str:item_id>/', \
+    path('playlisttoitem/delete/<int:playlist_id>/<str:item_type>/<str:item_id>/',
          views.delete_playlisttoitem, name='delete playlisttoitem'),
     path('playlisttoitem/new/<int:playlist_id>/', views.new_playlisttoitem, name='new playlisttoitem'),
 

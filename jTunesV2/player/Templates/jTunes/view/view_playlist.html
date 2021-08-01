@@ -20,39 +20,77 @@
         <input type="submit" value="Save changes">
         <input type="reset">
     </form>
-    <form action="{% url 'jTunes:new playlisttoitem' playlist_id%}" method="post">
+    <form action="{% url 'jTunes:new playlisttoitem' playlist.id%}" method="post">
         {%  csrf_token %}
         <table class="songs">
             <tr>
-                <th><label for="item">Items:</label></th>
+                <th>Items:</th>
+                <th>Path:</th>
             </tr>
             {%  if items %}
                 {% for item in items %}
-                    <tr>
-                        <th class="songs"><a href="{% url 'jTunes:view artist' artist.1 %}">{{ artist.0 }}</a></th>
-                        <th class="songs"><a href="{% url 'jTunes:delete albumtoartist' album.id artist.1 %}">remove</a></th>
-                    </tr>
+                    {% if item.type == 'song' %}
+                        <tr>
+                            <th><a href="{% url 'jTunes:view song' item.id %}">{{ item.name }}</a></th>
+                            <th>{{ item.extra }}</th>
+                            <th><a href="{% url 'jTunes:delete playlisttoitem' playlist.id item.type item.id %}">remove</a></th>
+                        </tr>
+                    {% endif %}
+                    {% if item.type == 'album' %}
+                        <tr>
+                            <th><a href="{% url 'jTunes:view album' item.id %}">{{ item.name }}</a></th>
+                            <th></th>
+                            <th><a href="{% url 'jTunes:delete playlisttoitem' playlist.id item.type item.id %}">remove</a></th>
+                        </tr>
+                        {% for jtem in item.extra %}
+                            {% if jtem.type == 'song' %}
+                                <tr>
+                                    <th><a href="{% url 'jTunes:view song' jtem.id %}">{{ jtem.name }}</a></th>
+                                    <th>{{ jtem.extra }}</th>
+                                </tr>
+                            {% endif %}
+                        {% endfor %}
+                    {% endif %}
+                    {% if item.type == 'playlist' %}
+                        <tr>
+                            <th><a href="{% url 'jTunes:view playlist' item.id %}">{{ item.name }}</a></th>
+                            <th></th>
+                            <th><a href="{% url 'jTunes:delete playlisttoitem' playlist.id item.type item.id %}">remove</a></th>
+                        </tr>
+                        {% for jtem in item.extra %}
+                            {% if jtem.type == 'song' %}
+                                <tr>
+                                    <th><a href="{% url 'jTunes:view song' jtem.id %}">{{ jtem.name }}</a></th>
+                                    <th>{{ jtem.extra }}</th>
+                                </tr>
+                            {% endif %}
+                            {% if jtem.type == 'album' %}
+                                <tr>
+                                    <th><a href="{% url 'jTunes:view album' jtem.id %}">{{ jtem.name }}</a></th>
+                                    <th></th>
+                                </tr>
+                                {% for ktem in jtem.extra %}
+                                    {% if ktem.type == 'song' %}
+                                        <tr>
+                                            <th><a href="{% url 'jTunes:view song' ktem.id %}">{{ ktem.name }}</a></th>
+                                            <th>{{ ktem.extra }}</th>
+                                        </tr>
+                                    {% endif %}
+                                {% endfor %}
+                            {% endif %}
+                        {% endfor %}
+                    {% endif %}
                 {% endfor %}
             {%  endif %}
             <tr>
-                <th><input id="artist" type="text" name="artist" value="Artist"></th>
+                <th><lablel for="type"></lablel><input id="type" type="text" name="type" value="Type"></th>
+                <th><lablel for="name"></lablel><input id="name" type="text" name="name" value="Name"></th>
                 <th><input type="submit" value="Add"></th>
             </tr>
         </table>
     </form>
-    <label for="items">Songs/albums/playlists (comma separated):</label>
-    <input id="items" type="text" name="items" value={% block items_value %}"{{ items }}"{% endblock %}>
     <br>
     {% block delete %}
-    <br>
-    <table>
-    {% for path in paths %}
-        <tr>
-            <th class="songs">{{ path }}</th>
-        </tr>
-    {% endfor %}
-    </table>
-    <br>
     <form action="{% url 'jTunes:delete playlist' playlist.id %}">
         <input type="submit" value="Delete playlist">
     </form>

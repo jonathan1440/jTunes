@@ -103,7 +103,15 @@ def delete_playlist(request, playlist_id):
     return HttpResponseRedirect(reverse('jTunes:list playlists'))
 
 
-def delete_playlisttoitem(request, playlist_id):
+def delete_playlisttoitem(request, playlist_id, item_type, item_id):
+    playlist = get_object_or_404(Playlist, id=playlist_id)
+
+    if item_type.lower() == 'song':
+        PlaylistToSong.objects.get(playlist=playlist, song=Song.objects.get(id=item_id)).delete()
+    elif item_type.lower() == 'album':
+        PlaylistToAlbum.objects.get(playlist=playlist, album=Album.objects.get(id=item_id)).delete()
+    elif item_type.lower() == 'playlist':
+        PlaylistToPlaylist.objects.get(playlist=playlist, member_playlist=Playlist.objects.get(id=item_id)).delete()
 
     return HttpResponseRedirect(reverse('jTunes:view playlist', args=(playlist_id,)))
 
@@ -157,31 +165,7 @@ def edit_playlist(request, playlist_id):
     playlist = get_object_or_404(Playlist, id=playlist_id)
     playlist.name = request.POST['name']
     playlist.save()
-    new_items = [i.strip() for i in request.POST['items'].split(',')]
-    old_items = [p.name for p in playlist.songs.all()] + [p.name for p in playlist.albums.all()] + [p.name for p in
-                                                                                                    playlist.playlists.all()]
-    for item in new_items:
-        if item in [song.name for song in Song.objects.all()]:
-            if item not in [p.name for p in playlist.songs.all()]:
-                helpers.new_playlisttosong(playlist, Song.objects.get(name=item))
-        elif item in [album.name for album in Album.objects.all()]:
-            if item not in [p.name for p in playlist.albums.all()]:
-                helpers.new_playlisttoalbum(playlist, Album.objects.get(name=item))
-        elif item in [p.name for p in Playlist.objects.all()]:
-            if playlist != Playlist.objects.get(name=item):
-                if item not in playlist.albums.all():
-                    helpers.new_playlisttoplaylist(playlist, Playlist.objects.get(name=item))
-    for item in old_items:
-        if item not in new_items:
-            if item in [song.name for song in Song.objects.all()]:
-                PlaylistToSong.objects.get(playlist=playlist, song=item).delete()
-            elif item in [album.name for album in Album.objects.all()]:
-                PlaylistToAlbum.objects.get(playlist=playlist, album=item).delete()
-            elif item in [p.name for p in Playlist.objects.all()]:
-                if playlist != Playlist.objects.get(name=item):
-                    PlaylistToPlaylist.objects.get(playlist=playlist, member_playlist=item).delete()
 
-    playlist.save()
     return HttpResponseRedirect(reverse('jTunes:view playlist', args=(playlist.id,)))
 
 
@@ -208,24 +192,28 @@ def generate_playlist(request):
 
 
 def generating_playlist(request):
-    use_a = request.POST.get('use arousal', False)
-    use_v = request.POST.get('use valence', False)
+    use_a = request.POST.get('use arousal', False) == 'on'
+    use_v = request.POST.get('use valence', False) == 'on'
     min_a = int(request.POST['min arousal value'])
     max_a = int(request.POST['max arousal value'])
     min_v = int(request.POST['min valence value'])
     max_v = int(request.POST['max valence value'])
+    print(use_a==True, use_v==True, min_a, max_a, min_v, max_v)
     songs = []
     for song in Song.objects.all():
-        in_a = song.arousal in range(min(min_a, max_a), max(min_a, max_a))
-        in_v = song.valence in range(min(min_v, max_v), max(min_v, max_v))
+        in_a = min_a < song.arousal * 10 < max_a
+        in_v = min_v < song.valence * 10 < max_v
         if use_a and (not use_v) and in_a or \
                 use_v and (not use_a) and in_v or \
-                use_v and use_a and in_a and in_v or \
-                (not use_a) and (not use_v):
+                use_v and use_a and in_a and in_v:
+                # (not use_a) and (not use_v):
+            print(song.arousal, in_a, song.valence, in_v, True)
             songs.append(song)
+        else:
+            print(song.arousal, in_a, song.valence, in_v, False)
     playlist = helpers.new_playlist(name=request.POST['name'], items_and_track_nums=[[song, None] for song in songs])
-    print(playlist.id)
-    return HttpResponseRedirect(reverse('jTunes:view playlist'), args=(playlist.id,))
+
+    return HttpResponseRedirect(reverse('jTunes:view playlist', args=(playlist.id,)))
 
 
 """ LIST ___ VIEWS """
@@ -372,6 +360,21 @@ def new_playlist(request):
 
 
 def new_playlisttoitem(request, playlist_id):
+    playlist = get_object_or_404(Playlist, id=playlist_id)
+    typ = helpers.get_model(request.POST['type'].strip())
+    name = request.POST['name'].strip()
+
+    if typ is None or typ == "type" or name is None or name == 'Name':
+        return HttpResponseRedirect(reverse('jTunes:view playlist', args=(playlist_id,)))
+
+    objects = typ.objects.get(name=name)
+
+    if typ.__name__ == 'Song':
+        helpers.new_playlisttosong(playlist, objects)
+    elif typ.__name__ == 'Album':
+        helpers.new_playlisttoalbum(playlist, objects)
+    elif typ.__name__ == 'Playlist':
+        helpers.new_playlisttoplaylist(playlist, objects)
 
     return HttpResponseRedirect(reverse('jTunes:view playlist', args=(playlist_id,)))
 
@@ -431,7 +434,7 @@ def view_genre(request, genre_id):
     template = loader.get_template('jTunes/view/view_genre.html')
     genre = get_object_or_404(Genre, id=genre_id)
     context = {
-        'genre': genre
+        'genre': genre,
     }
     return HttpResponse(template.render(context, request))
 
@@ -439,14 +442,60 @@ def view_genre(request, genre_id):
 def view_playlist(request, playlist_id):
     template = loader.get_template('jTunes/view/view_playlist.html')
     p = get_object_or_404(Playlist, id=playlist_id)
+
     items = []
-    [items.append(song.name) for song in p.songs.all()]
-    [items.append(album.name) for album in p.albums.all()]
-    [items.append(playlist.name) for playlist in p.playlists.all()]
+    # [items.append(['song', song.name, song.id, song.path]) for song in p.songs.all()]
+    # [items.append(['album', album.name, album.id, [['song', song.name, song.id, []] for song in album.songs.all()]]) for album in p.albums.all()]
+    # [items.append(['playlist', playlist.name, playlist.id, [['album', album.name, album.id, [['song', song.name, []] for song in album.songs.all()]] for album in p.albums.all()]]) for playlist in p.playlists.all()]
+    for song in p.songs.all():
+        items.append({
+            'type': 'song',
+            'name': song.name,
+            'id': song.id,
+            'extra': song.path})
+    for album in p.albums.all():
+        atems = []
+        for song in album.songs.all():
+            atems.append({
+                'type': 'song',
+                'name': song.name,
+                'id': song.id,
+                'extra': song.path})
+        items.append({
+            'type': 'album',
+            'name': "  " + album.name,
+            'id': album.id,
+            'extra': atems})
+    for playlist in p.playlists.all():
+        btems = []
+        for album in playlist.albums.all():
+            atems = []
+            for song in album.songs.all():
+                atems.append({
+                    'type': 'song',
+                    'name': "  " + song.name,
+                    'id': song.id,
+                    'extra': song.path})
+            btems.append({
+                'type': 'album',
+                'name': "  " + album.name,
+                'id': album.id,
+                'extra': atems})
+        for song in playlist.songs.all():
+            btems.append({
+                'type': 'song',
+                'name': song.name,
+                'id': song.id,
+                'extra': song.path})
+        items.append({
+            'type': 'playlist',
+            'name': playlist.name,
+            'id': playlist.id,
+            'extra': btems})
+
     context = {
         'playlist': p,
-        'items': ', '.join(items),
-        'paths': helpers.get_playlist_paths(p),
+        'items': items,
     }
     return HttpResponse(template.render(context, request))
 
