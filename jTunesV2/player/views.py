@@ -413,7 +413,7 @@ def view_album(request, album_id):
     context = {
         'album': album,
         'artists': [[artist.name, artist.id] for artist in album.album_artists.all()],
-        'songs': [[x.song.name, x.song.id, x.id, ', '.join([artist.name for artist in x.song.artists.all()])] for x in
+        'songs': [[x.song.name, x.song.id, x.id, ', '.join([artist.name for artist in x.song.artists.all()]), x.song.path] for x in
                   ats_relations],
     }
 

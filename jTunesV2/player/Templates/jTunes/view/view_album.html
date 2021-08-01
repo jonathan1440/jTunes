@@ -84,6 +84,7 @@
             <tr>
                 <th><label for="song">Song</label></th>
                 <th><label for="artists">Song artists</label></th>
+                <th>Local path</th>
                 <th></th>
             </tr>
             {%  if songs %}
@@ -91,6 +92,7 @@
                     <tr>
                         <th class="songs"><a href="{% url 'jTunes:view song' song.1 %}">{{ song.0 }}</a></th>
                         <th class="songs">{{ song.3 }}</th>
+                        <th>{{ song.4 }}</th>
                         <th class="songs"><a href="{% url 'jTunes:delete albumtosong' song.2 %}">remove</a></th>
                     </tr>
                 {% endfor %}
@@ -98,6 +100,7 @@
             <tr>
                 <th><input id="song" type="text" name="song" value="Song"></th>
                 <th><input id="artists" type="text" name="artists" value="Artists (comma seperated)"></th>
+                <th></th>
                 <th><input type="submit" value="Add"></th>
             </tr>
         </table>
